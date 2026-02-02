@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QGridLayout, QPushButton, QLabel, QFrame, QTextEdit, QLineEdit,
     QScrollArea, QSizePolicy, QTableWidget, QTableWidgetItem, QHeaderView, QMessageBox
 )
-from PySide6.QtCore import Qt, QSize, QMetaObject, Q_ARG, Signal, QObject, QTimer
+from PySide6.QtCore import Qt, Slot, QSize, QMetaObject, Q_ARG, Signal, QObject, QTimer
 from PySide6.QtGui import QFont, QColor
 
 from utils import (
@@ -261,7 +261,7 @@ class InfoWindow(ModuleWindow):
         # ============================================================
         # SECTION 3: How good is the response? - EQUAL SIZE CARDS
         # ============================================================
-        section3_title = QLabel("âœ… How good is the response?")
+        section3_title = QLabel("✅ How good is the response?")
         section3_title.setStyleSheet("font-size: 14pt; font-weight: bold; color: #F57C00; padding-top: 15px;")
         section3_title.setAlignment(Qt.AlignCenter)
         content_layout.addWidget(section3_title)
@@ -352,8 +352,9 @@ class ClassificationWindow(ModuleWindow):
 
         from PySide6.QtWidgets import QTextEdit, QLabel, QHBoxLayout, QMessageBox
         
-        # Store last classification category
+        # Store last classification category and type
         self.last_category = None
+        self.current_nfr_type = None  # Store the classified NFR type for navigation
         
         # Instruction label
         instruction = QLabel("Enter a requirement to classify:")
@@ -453,6 +454,74 @@ class ClassificationWindow(ModuleWindow):
         )
         self.content_layout.addWidget(self.results_label)
         
+        
+        # Navigation buttons (initially hidden)
+        self.nav_layout = QHBoxLayout()
+        self.nav_layout.setSpacing(15)
+        
+        # "Continue Pipeline" label
+        self.pipeline_label = QLabel("🔗 <b>Continue Exploring:</b>")
+        self.pipeline_label.setStyleSheet("font-size: 13pt; color: #333; margin-top: 15px;")
+        self.pipeline_label.setVisible(False)
+        
+        # Button 1: What does X mean? (Decomposition)
+        self.decomp_btn = QPushButton("📖 What does X mean?")
+        self.decomp_btn.setMinimumHeight(45)
+        self.decomp_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #FF9800;
+                color: white;
+                font-size: 12pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 12px;
+            }
+            QPushButton:hover {
+                background-color: #FB8C00;
+            }
+            QPushButton:pressed {
+                background-color: #F57C00;
+            }
+        """)
+        self.decomp_btn.setCursor(Qt.PointingHandCursor)
+        self.decomp_btn.clicked.connect(self.go_to_decomposition)
+        self.decomp_btn.setVisible(False)
+        
+        # Button 2: How to achieve X? (Operationalizations)
+        self.operationalize_btn = QPushButton("🔧 How to achieve X?")
+        self.operationalize_btn.setMinimumHeight(45)
+        self.operationalize_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #9C27B0;
+                color: white;
+                font-size: 12pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 12px;
+            }
+            QPushButton:hover {
+                background-color: #8E24AA;
+            }
+            QPushButton:pressed {
+                background-color: #7B1FA2;
+            }
+        """)
+        self.operationalize_btn.setCursor(Qt.PointingHandCursor)
+        self.operationalize_btn.clicked.connect(self.go_to_operationalizations)
+        self.operationalize_btn.setVisible(False)
+        
+        # Add buttons to navigation layout
+        self.nav_layout.addWidget(self.decomp_btn)
+        self.nav_layout.addWidget(self.operationalize_btn)
+        
+        # Add to main layout
+        self.content_layout.addWidget(self.pipeline_label)
+        self.content_layout.addLayout(self.nav_layout)
+        
+        self.content_layout.addStretch()
+        
         self.content_layout.addStretch()
     
     def classify_fr_nfr(self):
@@ -488,11 +557,11 @@ class ClassificationWindow(ModuleWindow):
                 
                 # Format result
                 if result == 'NFR':
-                    response = "âœ… Classification: Non-Functional Requirement (NFR)\n\n"
+                    response = "✅ Classification: Non-Functional Requirement (NFR)\n\n"
                     response += "This requirement describes a quality attribute or constraint on how the system should perform.\n\n"
                     response += "💡 Use 'Classify: Specific Type' to identify which NFR type (Performance, Security, etc.)"
                 elif result == 'FR':
-                    response = "âœ… Classification: Functional Requirement (FR)\n\n"
+                    response = "✅ Classification: Functional Requirement (FR)\n\n"
                     response += "This requirement describes what the system should do - a specific function or behavior.\n\n"
                     response += "💡 Use 'Classify: Specific Type' to identify which FR type (Process, Display, etc.)"
                 else:
@@ -563,7 +632,7 @@ class ClassificationWindow(ModuleWindow):
                         response += "The classifier could not find an exact match in the metamodel.\n"
                         response += "The above type is suggested by the LLM but may not be in the knowledge base."
                     else:
-                        response = f"âœ… **NFR Type: {formatted_name}**\n\n"
+                        response = f"✅ **NFR Type: {formatted_name}**\n\n"
                         
                         # Get description from metamodel
                         entity = getEntity(result)
@@ -582,9 +651,12 @@ class ClassificationWindow(ModuleWindow):
                         response += f"**Note:** {warning}\n\n"
                         response += "The classifier used LLM fallback for this type."
                     else:
-                        response = f"âœ… **FR Type: {formatted_name}**\n\n"
+                        response = f"✅ **FR Type: {formatted_name}**\n\n"
                         response += "This is a functional requirement describing system behavior."
                 
+                
+                # Store the classified type for navigation (only if NFR)
+                self.current_nfr_type = result if category == "NFR" else None
                 return response
                 
             except ImportError:
@@ -595,14 +667,65 @@ class ClassificationWindow(ModuleWindow):
         # Run in thread and update UI
         import threading
         def run_and_update():
-            result = do_classify()
+            result_text = do_classify()
             from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt, Q_ARG
             QMetaObject.invokeMethod(self.results_label, "setText", 
-                                    QtCore_Qt.QueuedConnection, Q_ARG(str, result))
-        
+                                    QtCore_Qt.QueuedConnection, Q_ARG(str, result_text))
+            
+            # If NFR classification successful, show navigation buttons
+            if self.last_category == "NFR" and self.current_nfr_type and "✅" in result_text:
+                QMetaObject.invokeMethod(
+                    self, "_show_navigation_buttons",
+                    QtCore_Qt.QueuedConnection
+                )
         thread = threading.Thread(target=run_and_update, daemon=True)
         thread.start()
 
+
+
+    @Slot()
+    def _show_navigation_buttons(self):
+        """Show navigation buttons after successful NFR classification"""
+        self.pipeline_label.setVisible(True)
+        self.decomp_btn.setVisible(True)
+        self.operationalize_btn.setVisible(True)
+    
+    def go_to_decomposition(self):
+        """Navigate to NFR Decomposition window"""
+        if self.current_nfr_type:
+            # Clean up entity name
+            clean_name = self.current_nfr_type.replace('Type', '').replace('Softgoal', '')
+            
+            # Set flag to prevent homescreen from showing on close
+            self._navigating_pipeline = True
+            self.hide()
+            
+            self.decomp_window = NFRDecompositionWindow(
+                "What does X mean? (Decomposition)",
+                self.parent_home_screen,
+                initial_entity=clean_name
+            )
+            self.decomp_window.show()
+            self.close()
+    
+    def go_to_operationalizations(self):
+        """Navigate to Operationalization Decomposition window"""
+        if self.current_nfr_type:
+            # Clean up entity name
+            clean_name = self.current_nfr_type.replace('Type', '').replace('Softgoal', '')
+            
+            # Set flag to prevent homescreen from showing on close
+            self._navigating_pipeline = True
+            self.hide()
+            
+            self.operationalize_window = OperationalizationDecompositionWindow(
+                "How can we do it? (Operationalizing Softgoals)",
+                self.parent_home_screen,
+                initial_entity=clean_name
+            )
+            self.operationalize_window.show()
+            self.close()
+    
 
 
 class DecompositionWindow(ModuleWindow):
@@ -714,7 +837,7 @@ class DecompositionWindow(ModuleWindow):
                 
                 if decomps:
                     formatted_name = format_entity_name(entity_name)
-                    response += f"âœ… Decompositions of {formatted_name}:\n\n"
+                    response += f"✅ Decompositions of {formatted_name}:\n\n"
                     response += f"{formatted_name} has {len(decomps)} decomposition method(s):\n\n"
                     
                     for i, decomp in enumerate(decomps, 1):
@@ -734,7 +857,7 @@ class DecompositionWindow(ModuleWindow):
                     try:
                         children = getChildren(entity)
                         if children:
-                            response += f"âœ… {formatted_name} Structure:\n\n"
+                            response += f"✅ {formatted_name} Structure:\n\n"
                             response += f"â„¹ï¸ {formatted_name} has no decomposition methods, but has {len(children)} subtype(s) via isA relationships:\n\n"
                             
                             for j, child in enumerate(children, 1):
@@ -2200,7 +2323,7 @@ class SideEffectsWindow(ModuleWindow):
         self.content_layout.addWidget(self.results_label, stretch=1)
         
         # Pipeline info label - shows completion message
-        self.pipeline_info = QLabel("âœ… Pipeline complete! You've explored: What is it? â†’ Decompositions â†’ Operationalizations â†’ Side Effects")
+        self.pipeline_info = QLabel("✅ Pipeline complete! You've explored: What is it? â†’ Decompositions â†’ Operationalizations â†’ Side Effects")
         self.pipeline_info.setStyleSheet("""
             QLabel {
                 font-size: 11pt;
@@ -2299,7 +2422,7 @@ class SideEffectsWindow(ModuleWindow):
                 response += "\n"
                 
                 if positive:
-                    response += "\nâœ… But it also HELPS:\n\n"
+                    response += "\n✅ But it also HELPS:\n\n"
                     for target, effect in positive:
                         response += f"   • {target} ({effect})\n"
                     response += "\n"
@@ -2308,7 +2431,7 @@ class SideEffectsWindow(ModuleWindow):
                 response += f"💡 These are trade-offs to consider when using {formatted_search}."
             else:
                 if contributions:
-                    response += f"âœ… {formatted_search} has no negative side effects!\n\n"
+                    response += f"✅ {formatted_search} has no negative side effects!\n\n"
                     response += f"This technique only has positive or neutral effects.\n\n"
                     if positive:
                         response += "It positively contributes to:\n"
@@ -2906,7 +3029,7 @@ class NFRDecompositionWindow(ModuleWindow):
             formatted_name = format_entity_name(entity_name)
             
             if nfr_decomps:
-                response += f"âœ… **NFR Decompositions for {formatted_name}**\n\n"
+                response += f"✅ **NFR Decompositions for {formatted_name}**\n\n"
                 response += f"Found {len(nfr_decomps)} NFR decomposition method(s):\n\n"
                 response += "="*50 + "\n\n"
                 
@@ -3358,7 +3481,7 @@ class OperationalizationDecompositionWindow(ModuleWindow):
             # CASE 2: Input is an Operationalization â†’ Show types & NFRs it helps
             else:
                 found_ops.append(search_name)
-                response += f"âœ… Details for {formatted_name}\n\n"
+                response += f"✅ Details for {formatted_name}\n\n"
                 response += "=" * 60 + "\n\n"
                 
                 # Types & Decompositions
@@ -3399,7 +3522,7 @@ class OperationalizationDecompositionWindow(ModuleWindow):
                 
                 # Positive Contributions
                 response += "=" * 60 + "\n\n"
-                response += f"âœ… POSITIVE CONTRIBUTIONS (NFRs this helps)\n\n"
+                response += f"✅ POSITIVE CONTRIBUTIONS (NFRs this helps)\n\n"
                 
                 positive_contribs = []
                 for name, obj in inspect.getmembers(metamodel):
@@ -3666,7 +3789,7 @@ class ArgumentationDecompositionWindow(ModuleWindow):
                             claim_decomps.append(decomp)
                 
                 response = suggestion
-                response += f"âœ… **Argumentation for {formatted_name} Decompositions**\n\n"
+                response += f"✅ **Argumentation for {formatted_name} Decompositions**\n\n"
                 response += "="*60 + "\n\n"
                 
                 if claim_decomps:
