@@ -1,13 +1,3 @@
-"""
-NFR Framework - 3-Level Metamodel Architecture (Version 2)
-===========================================================
-
-Level 1: METAMODEL (Ontology) - Metaclasses define structure
-Level 2: MODEL (Classes) - Instances of metaclasses  
-Level 3: GROUND INSTANCES (Tokens) - Concrete occurrences
-
-"""
-
 from typing import List, Dict, Any, Optional
 from enum import Enum
 import inspect
@@ -21,10 +11,7 @@ sys.path.insert(0, parent_dir)
 # ============================================================================
 
 class PropositionMetaClass(type):
-    """
-    Metaclass for all propositions.
-    Defines: priority, label
-    """
+    pass
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
         # Always create new set (don't share with parent)
@@ -36,10 +23,7 @@ class PropositionMetaClass(type):
 
 
 class SoftgoalMetaClass(PropositionMetaClass):
-    """
-    Metaclass for softgoals.
-    Defines: type, topic (+ priority, label from parent)
-    """
+    pass
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
         # Copy parent's attributes (don't share the same set!)
@@ -52,57 +36,57 @@ class SoftgoalMetaClass(PropositionMetaClass):
 
 
 class NFRSoftgoalMetaClass(SoftgoalMetaClass):
-    """Metaclass for NFR softgoals"""
+    pass
     pass
 
 
 class OperationalizingSoftgoalMetaClass(SoftgoalMetaClass):
-    """Metaclass for operationalizing softgoals"""
+    pass
     pass
 
 
 class ClaimSoftgoalMetaClass(SoftgoalMetaClass):
-    """Metaclass for claim softgoals"""
+    pass
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
-        # ClaimSoftgoal has ONLY type and topic (no description, label, priority)
-        cls._metaclass_attributes = {'type', 'topic'}
+        # ClaimSoftgoal has ONLY argument attribute
+        cls._metaclass_attributes = {'argument'}
         return cls
 
 
 class SoftgoalTypeMetaClass(type):
-    """Metaclass for softgoal types"""
+    pass
     pass
 
 
 class SoftgoalTopicMetaClass(type):
-    """Metaclass for softgoal topics"""
+    pass
     pass
 
 
 class ContributionMetaClass(PropositionMetaClass):
-    """Metaclass for contributions"""
+    pass
     pass
 
 
 class MethodMetaClass(type):
-    """Metaclass for methods"""
+    pass
     pass
 
 
 class DecompositionMethodMetaClass(MethodMetaClass):
-    """Metaclass for decomposition methods"""
+    pass
     pass
 
 class NFRDecompositionMethodMetaClass(DecompositionMethodMetaClass):
-    """Metaclass for decomposition methods"""
+    pass
     pass
 
 class OperationalizationDecompositionMethodMetaClass(DecompositionMethodMetaClass):
-    """Metaclass for decomposition methods"""
+    pass
     pass
 class ClaimDecompositionMethodMetaClass(DecompositionMethodMetaClass):
-    """Metaclass for decomposition methods"""
+    pass
     pass
 
 
@@ -115,7 +99,7 @@ class ClaimDecompositionMethodMetaClass(DecompositionMethodMetaClass):
 # ----------------------------------------------------------------------------
 
 class PropositionPriority(Enum):
-    """Priority levels for propositions"""
+    pass
     CRITICAL = 1
     HIGH = 2
     MEDIUM = 3
@@ -123,7 +107,7 @@ class PropositionPriority(Enum):
 
 
 class PropositionLabel(Enum):
-    """Labels for proposition satisfaction"""
+    pass
     SATISFICED = "satisficed"
     DENIED = "denied"
     WEAKLY_SATISFICED = "weakly_satisficed"
@@ -133,7 +117,7 @@ class PropositionLabel(Enum):
 
 
 class ContributionType(Enum):
-    """Types of contributions"""
+    pass
     MAKE = "MAKE"
     HELP = "HELP"
     SOME_PLUS = "SOME+"
@@ -141,6 +125,7 @@ class ContributionType(Enum):
     SOME_MINUS = "SOME-"
     HURT = "HURT"
     BREAK = "BREAK"
+    CLAIM = "CLAIM"  # Claim argues for/supports a target
 
 
 # ----------------------------------------------------------------------------
@@ -148,21 +133,14 @@ class ContributionType(Enum):
 # ----------------------------------------------------------------------------
 
 class Proposition(metaclass=PropositionMetaClass):
-    """Base class for all propositions"""
+    pass
     def __init__(self):
         self.priority = PropositionPriority.MEDIUM
         self.label = PropositionLabel.UNKNOWN
-        self.description = ""
 
 
 class Softgoal(Proposition, metaclass=SoftgoalMetaClass):
-    """
-    Base class for all softgoals.
-    
-    Note the syntax:
-    - Softgoal(Proposition) = inheritance (isA) - Softgoal inherits from Proposition
-    - metaclass=SoftgoalMetaClass = instanceOf - Softgoal is instance of SoftgoalMetaClass
-    """
+    pass
     def __init__(self):
         super().__init__()
         self.type = None
@@ -170,37 +148,24 @@ class Softgoal(Proposition, metaclass=SoftgoalMetaClass):
 
 
 class NFRSoftgoal(Softgoal, metaclass=NFRSoftgoalMetaClass):
-    """NFR Softgoal class"""
+    pass
     pass
 
 
 class OperationalizingSoftgoal(Softgoal, metaclass=OperationalizingSoftgoalMetaClass):
-    """Operationalizing Softgoal class"""
+    pass
     pass
 
 
 class ClaimSoftgoal(Softgoal, metaclass=ClaimSoftgoalMetaClass):
-    """
-    Claim Softgoal class.
-    Used for argumentation and attribution of decomposition methods.
-    
-    ClaimSoftgoal only has TWO attributes:
-    - TYPE: The claim itself (a ClaimSoftgoalType class)
-    - TOPIC: What the claim is about (a SoftgoalTopic)
-    
-    Example:
-        claim = ClaimSoftgoal()
-        claim.type = SmithPerformanceClaimType  # The claim: "According to Smith's..."
-        claim.topic = SoftgoalTopic("Performance Decomposition")  # What it's about
-    """
-    def __init__(self):
-        # Don't call super().__init__() to avoid getting description, label, priority
-        self.type = None
-        self.topic = None
+    pass
+    def __init__(self, argument: str = ""):
+        # Don't call super().__init__() to avoid getting label, priority
+        self.argument = argument
 
 
 class SoftgoalTopic:
-    """Topic/domain of a softgoal"""
+    pass
     def __init__(self, name: str):
         self.name = name
     
@@ -213,522 +178,432 @@ class SoftgoalTopic:
 # ----------------------------------------------------------------------------
 
 class SoftgoalType(metaclass=SoftgoalTypeMetaClass):
-    """Base class for all softgoal types"""
-    description = "Base type for softgoals"
+    pass
 
 
 class NFRSoftgoalType(SoftgoalType):
-    """Base class for NFR quality attribute types"""
+    pass
     pass
 
 
 class OperationalizingSoftgoalType(SoftgoalType):
-    """Base class for operationalizing technique types"""
+    pass
     pass
 
 
 class ClaimSoftgoalType(SoftgoalType):
-    """Base class for claim types"""
+    pass
     pass
 
 
 # Specific Claim Types (the claim is the type itself)
 class SmithPerformanceClaimType(ClaimSoftgoalType):
-    """Claim type for Smith's user-centered performance metrics"""
-    description = "According to Smith's User-Centered Performance Metrics"
+    pass
+    topic = "According to Smith's User-Centered Performance Metrics"
 
 
 class CIATriadClaimType(ClaimSoftgoalType):
-    """Claim type for CIA Triad security decomposition"""
-    description = "Trusted Computer System Evaluation Criteria (TCSEC/Orange Book, 1985) - Defines security through Confidentiality, Integrity, and Availability"
+    pass
+    topic = "Trusted Computer System Evaluation Criteria (TCSEC/Orange Book, 1985) - Defines security through Confidentiality, Integrity, and Availability"
 
 
 class WindowsTaskManagerClaimType(ClaimSoftgoalType):
-    """Claim type for Windows Task Manager performance metrics"""
-    description = "Microsoft Windows Task Manager - Performance Tab"
+    pass
+    topic = "Microsoft Windows Task Manager - Performance Tab"
 
 
 class TraditionalCSPerformanceClaimType(ClaimSoftgoalType):
-    """Claim type for traditional CS performance decomposition"""
-    description = "Traditional Computer Science - Time and Space Complexity"
+    pass
+    topic = "Traditional Computer Science - Time and Space Complexity"
 
 class WikipediaEncryptionTypesClaimType(ClaimSoftgoalType):
-    """Claim type for types of encryptions"""
-    description = "Wikipedia (Encryption article) - Classifies encryption into Symmetric-key and Public-key (asymmetric) schemes"
+    pass
+    topic = "Wikipedia (Encryption article) - Classifies encryption into Symmetric-key and Public-key (asymmetric) schemes"
 
 class ChungNFRFrameworkClaimType(ClaimSoftgoalType):
-    """Claim type for Chung et al.'s NFR Framework"""
-    description = "According to Chung et al.'s NFR Framework (2000)"
+    pass
+    topic = "According to Chung et al.'s NFR Framework (2000)"
 
 class ISO25010UsabilityClaimType(ClaimSoftgoalType):
-    """Claim type for ISO 25010 Usability decomposition"""
-    description = "ISO/IEC 25010:2011 Systems and software Quality Requirements and Evaluation (SQuaRE) - Defines usability through five quality sub-characteristics"
+    pass
+    topic = "ISO/IEC 25010:2011 Systems and software Quality Requirements and Evaluation (SQuaRE) - Defines usability through five quality sub-characteristics"
 
 class ManduchiSafetyClaimType(ClaimSoftgoalType):
-    """Claim type for Manduchi et al. safety-focused design"""
-    description = "Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users. ACM Transactions on Accessible Computing - Advance warnings minimize input to focus on safety"
+    pass
+    topic = "Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users. ACM Transactions on Accessible Computing - Advance warnings minimize input to focus on safety"
 
 class ManduchiUsabilityClaimType(ClaimSoftgoalType):
-    """Claim type for Manduchi et al. usability design"""
-    description = "Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Multimodal feedback enables hands-free operation"
+    pass
+    topic = "Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Multimodal feedback enables hands-free operation"
 
 class ASSISTUsabilityClaimType(ClaimSoftgoalType):
-    """Claim type for ASSIST personalization study"""
-    description = "ASSIST (2020). Indoor navigation assistant for blind and visually impaired people - Personalized interfaces improve usability by adapting to unique user experiences"
+    pass
+    topic = "ASSIST (2020). Indoor navigation assistant for blind and visually impaired people - Personalized interfaces improve usability by adapting to unique user experiences"
 
 class PMCCognitiveLoadClaimType(ClaimSoftgoalType):
-    """Claim type for PMC multimodal review on cognitive load"""
-    description = "PMC (2024). Comprehensive review on NUI, multi-sensory interfaces for visually impaired users - Concise audio reduces cognitive overburden"
+    pass
+    topic = "PMC (2024). Comprehensive review on NUI, multi-sensory interfaces for visually impaired users - Concise audio reduces cognitive overburden"
 
 class PMCReceptivityClaimType(ClaimSoftgoalType):
-    """Claim type for PMC multimodal review on receptivity"""
-    description = "PMC (2024). Comprehensive review on NUI, multi-sensory interfaces for visually impaired users - Non-speech sounds improve receptivity"
+    pass
+    topic = "PMC (2024). Comprehensive review on NUI, multi-sensory interfaces for visually impaired users - Non-speech sounds improve receptivity"
 
 class SensorsSafetyClaimType(ClaimSoftgoalType):
-    """Claim type for Sensors 2012 positioning accuracy"""
-    description = "Sensors (2012). An Indoor Navigation System for the Visually Impaired - Positioning accuracy of ≤0.4m enables safe navigation"
+    pass
+    topic = "Sensors (2012). An Indoor Navigation System for the Visually Impaired - Positioning accuracy of ≤0.4m enables safe navigation"
 
 class PouloseSensorFusionClaimType(ClaimSoftgoalType):
-    """Claim type for Poulose & Kim sensor fusion framework"""
-    description = "Poulose & Kim (2019). A Sensor Fusion Framework for Indoor Localization Using Smartphone Sensors - Sensor fusion reduces positioning error to 0.44-1.17m"
+    pass
+    topic = "Poulose & Kim (2019). A Sensor Fusion Framework for Indoor Localization Using Smartphone Sensors - Sensor fusion reduces positioning error to 0.44-1.17m"
 
 class NielsenLearnabilityClaimType(ClaimSoftgoalType):
-    """Claim type for Nielsen Norman Group learnability metrics"""
-    description = "Nielsen Norman Group (2019). How to Measure Learnability of a User Interface - Steep learning curves enable proficiency within approximately 4 trials"
+    pass
+    topic = "Nielsen Norman Group (2019). How to Measure Learnability of a User Interface - Steep learning curves enable proficiency within approximately 4 trials"
 
 
 # NFR Quality Attribute Types
 class PerformanceType(NFRSoftgoalType):
-    """Performance quality attribute type"""
-    description = "System response time, throughput, and efficiency; system operation speed/performance; optimality"
+    pass
 
 
 class TimePerformanceType(NFRSoftgoalType):
-    """Time-related performance type"""
-    description = "Performance quality related to time or temporal aspects; how fast operations complete; speed and quickness; time efficiency"
+    pass
 
 
 class SpacePerformanceType(NFRSoftgoalType):
-    """Space-related performance type"""
-    description = "Performance quality related to space or memory usage"
+    pass
 
 
 class ResponsivenessPerformanceType(NFRSoftgoalType):
-    """User-perceived responsiveness type (Smith's approach)"""
-    description = "User-perceived system responsiveness and interactivity"
+    pass
 
 
 # Windows Task Manager Performance Types
 class CPUUtilizationType(NFRSoftgoalType):
-    """CPU utilization performance type (Windows Task Manager)"""
-    description = "Processor usage and computational performance"
+    pass
 
 
 class MemoryUsageType(NFRSoftgoalType):
-    """Memory usage performance type (Windows Task Manager)"""
-    description = "RAM utilization and memory consumption"
+    pass
 
 
 class DiskTimeType(NFRSoftgoalType):
-    """Active disk time performance type (Windows Task Manager)"""
-    description = "Disk I/O activity and storage access time"
+    pass
 
 
 class NetworkThroughputType(NFRSoftgoalType):
-    """Network throughput performance type (Windows Task Manager)"""
-    description = "Network bandwidth utilization and data transfer rate"
+    pass
 
 
 class GPUUtilizationType(NFRSoftgoalType):
-    """GPU utilization performance type (Windows Task Manager)"""
-    description = "Graphics processor usage and rendering performance"
+    pass
 
 
 class SecurityType(NFRSoftgoalType):
-    """Security quality attribute type"""
-    description = "Protection from unauthorized access and threats"
+    pass
 
 
 class ConfidentialityType(NFRSoftgoalType):
-    """Confidentiality security type"""
-    description = "Protecting information from unauthorized disclosure"
+    pass
 
 
 class IntegrityType(NFRSoftgoalType):
-    """Integrity security type"""
-    description = "Protecting information from unauthorized modification"
+    pass
 
 
 class AvailabilityType(NFRSoftgoalType):
-    """Availability security type"""
-    description = "Ensuring systems and data are accessible when needed ubiquitous access; available everywhere and anywhere; universal availability; always accessible; system uptime and continuous operation"
+    pass
 
 
 class UsabilityType(NFRSoftgoalType):
-    """Usability quality attribute type"""
-    description = "Ease of use and user experience; comfortable interaction; user-friendly interface; easy to learn and use; intuitive design; pleasant and convenient user experience"
+    pass
 
 
 class ReliabilityType(NFRSoftgoalType):
-    """Reliability quality attribute type"""
-    description = "System dependability and consistency"
+    pass
 
 
 class MaintainabilityType(NFRSoftgoalType):
-    """Maintainability quality attribute type"""
-    description = "Ease of system maintenance and evolution"
+    pass
 
 
 # Additional NFR Quality Attribute Types (alphabetically ordered)
 class AccuracyType(NFRSoftgoalType):
-    """Accuracy quality attribute type"""
-    description = "The number of correctly predicted data points out of all the data points"
+    pass
 
 
 class AdaptabilityType(NFRSoftgoalType):
-    """Adaptability quality attribute type"""
-    description = "The ability of a system to work well in different but related contexts; automatic adjustment to different environments; operates across various platforms and conditions; context-aware behavior"
+    pass
 
 
 class BiasType(NFRSoftgoalType):
-    """Bias quality attribute type"""
-    description = "A phenomenon that occurs when an algorithm produces results that are systematically prejudiced due to erroneous assumptions in the ML process"
+    pass
 
 
 class CompletenessType(NFRSoftgoalType):
-    """Completeness quality attribute type"""
-    description = "An indication of the comprehensiveness of available data, as a proportion of the entire data set, to address specific information requirements"
+    pass
 
 
 class ComplexityType(NFRSoftgoalType):
-    """Complexity quality attribute type"""
-    description = "When a system or solution has many components, interrelations or interactions, and is difficult to understand"
+    pass
 
 
 class ConsistencyType(NFRSoftgoalType):
-    """Consistency quality attribute type"""
-    description = "A series of measurements of the same project carried out by different raters using the same method should produce similar results"
+    pass
 
 
 class CorrectnessType(NFRSoftgoalType):
-    """Correctness quality attribute type"""
-    description = "The output of the system matches the expectations outlined in the requirements, and the system operates without failure"
+    pass
 
 
 class DomainAdaptationType(NFRSoftgoalType):
-    """Domain Adaptation quality attribute type"""
-    description = "The ability of a model trained on a source domain to be used in a different—but related—domain"
+    pass
 
 
 class EfficiencyType(NFRSoftgoalType):
-    """Efficiency quality attribute type"""
-    description = "The ability to accomplish something with minimal time and effort, resource amount used in relation to the results achieved"
+    pass
 
 
 class EthicsType(NFRSoftgoalType):
-    """Ethics quality attribute type"""
-    description = "Concerned with adding or ensuring moral behaviors"
+    pass
 
 
 class ExplainabilityType(NFRSoftgoalType):
-    """Explainability quality attribute type"""
-    description = "The extent to which the internal mechanics of ML-enabled system can be explained in human terms"
+    pass
 
 
 class FairnessType(NFRSoftgoalType):
-    """Fairness quality attribute type"""
-    description = "The ability of a system to operate in a fair and unbiased manner"
+    pass
 
 
 class FaultToleranceType(NFRSoftgoalType):
-    """Fault Tolerance quality attribute type"""
-    description = "The ability of a system to continue operating without interruption when one or more of its components fail"
+    pass
 
 
 class FlexibilityType(NFRSoftgoalType):
-    """Flexibility quality attribute type"""
-    description = "The ability of a system to react/adapt to changing demands or conditions; ; user can configure and tailor settings; support for individual preferences; flexible configuration options"
+    pass
 
 
 class InterpretabilityType(NFRSoftgoalType):
-    """Interpretability quality attribute type"""
-    description = "The extraction of relevant knowledge from a model concerning relationships either contained in data or learned by the model"
+    pass
 
 
 class InteroperabilityType(NFRSoftgoalType):
-    """Interoperability quality attribute type"""
-    description = "The ability for two systems to communicate effectively"
+    pass
 
 
 class JustifiabilityType(NFRSoftgoalType):
-    """Justifiability quality attribute type"""
-    description = "The ability to show the output of an ML-enabled system to be right or reasonable"
+    pass
 
 
 class PortabilityType(NFRSoftgoalType):
-    """Portability quality attribute type"""
-    description = "The ability to transfer a system or element of a system from one environment to another"
+    pass
 
 
 class PrivacyType(NFRSoftgoalType):
-    """Privacy quality attribute type"""
-    description = "An algorithm is private if an observer examining the output is not able to determine whether a specific individual's information was used in the computation"
+    pass
 
 
 class RepeatabilityType(NFRSoftgoalType):
-    """Repeatability quality attribute type"""
-    description = "The variation in measurements taken by a single instrument or person under the same conditions"
+    pass
 
 
 class RetrainabilityType(NFRSoftgoalType):
-    """Retrainability quality attribute type"""
-    description = "The ability to re-run the process that generated the previously selected model on a new training set of data"
+    pass
 
 
 class ReproducibilityType(NFRSoftgoalType):
-    """Reproducibility quality attribute type"""
-    description = "One can repeatedly run your algorithm on certain datasets and obtain the same (or similar) results"
+    pass
 
 
 class ReusabilityType(NFRSoftgoalType):
-    """Reusability quality attribute type"""
-    description = "The ability of reusing the whole or the greater part of the system component for similar but different purpose"
+    pass
 
 
 class SafetyType(NFRSoftgoalType):
-    """Safety quality attribute type"""
-    description = "The absence of failures or conditions that render a system dangerous; protection from harm, hazards, and unsafe conditions; ensuring safe operation and navigation; preventing accidents and injury to users"
+    pass
 
 
 class ScalabilityType(NFRSoftgoalType):
-    """Scalability quality attribute type"""
-    description = "The ability to increase or decrease the capacity of the system in response to changing demands"
+    pass
 
 
 class TestabilityType(NFRSoftgoalType):
-    """Testability quality attribute type"""
-    description = "The ability of the system to support testing by offering relevant information or ensuring the visibility of failures"
+    pass
 
 
 class TransparencyType(NFRSoftgoalType):
-    """Transparency quality attribute type"""
-    description = "The extent to which a human user can infer why the system made a particular decision or produced a particular externally-visible behaviour"
+    pass
 
 
 class TraceabilityType(NFRSoftgoalType):
-    """Traceability quality attribute type"""
-    description = "The ability to trace work items across the development lifecycle"
+    pass
 
 
 class TrustType(NFRSoftgoalType):
-    """Trust quality attribute type"""
-    description = "A trusted system is a system that is relied upon to a specified extent to enforce a specified security, or a security policy"
+    pass
 
 
 class LegalComplianceType(NFRSoftgoalType):
-    """Legal Compliance type"""
-    description = "Legal requirements, regulatory compliance, contractual obligations, and adherence to laws and standards"
+    pass
 
 
 class LookFeelType(NFRSoftgoalType):
-    """Look and Feel type"""
-    description = "Visual appearance, UI aesthetics, design appeal, user interface look and style; comfortable visual experience; pleasing presentation; attractive design"
+    pass
 
 # New NFR Types from Taxonomy
 class RecoverabilityType(NFRSoftgoalType):
-    """Recoverability quality attribute type"""
-    description = "Ability of the system to recover from failures and restore normal operation"
+    pass
 
 class DiagnosabilityType(NFRSoftgoalType):
-    """Diagnosability quality attribute type"""
-    description = "Ease of identifying, isolating, and troubleshooting system problems"
+    pass
 
 class CompatibilityType(NFRSoftgoalType):
-    """Compatibility quality attribute type"""
-    description = "Ability to work with existing systems, data formats, and standards"
+    pass
 
 class DeterministicBehaviorType(NFRSoftgoalType):
-    """Deterministic Behavior quality attribute type"""
-    description = "Predictable, repeatable system behavior given the same inputs"
+    pass
 
 class LearnabilityType(NFRSoftgoalType):
-    """Learnability quality attribute type (ISO 25010)"""
-    description = "Degree to which a system can be used by specified users to achieve specified goals of learning to use the system with effectiveness, efficiency, freedom from risk and satisfaction"
+    pass
 
 class MemorabilityType(NFRSoftgoalType):
-    """Memorability quality attribute type (ISO 25010)"""
-    description = "Degree to which a system can be remembered by users after a period of non-use"
+    pass
 
 class ErrorPreventionType(NFRSoftgoalType):
-    """Error Prevention quality attribute type (ISO 25010)"""
-    description = "Degree to which a system prevents users from making errors"
+    pass
 
 class SatisfactionType(NFRSoftgoalType):
-    """Satisfaction quality attribute type (ISO 25010)"""
-    description = "Degree to which user needs are satisfied when a system is used in a specified context of use"
+    pass
 
 
 # Operationalizing Technique Types
 class IndexingType(OperationalizingSoftgoalType):
-    """Indexing technique type"""
-    description = "Using database indexes to improve query performance"
+    pass
 
 
 class CachingType(OperationalizingSoftgoalType):
-    """Caching technique type"""
-    description = "Storing frequently accessed data in cache"
+    pass
 
 
 class EncryptionType(OperationalizingSoftgoalType):
-    """Encryption technique type"""
-    description = "Encrypting data to protect confidentiality"
+    pass
 
 class SymmetricKeyEncryptionType(EncryptionType):
-    """Symmetric-key encryption - same key for encryption and decryption"""
+    pass
     pass
 
 class PublicKeyEncryptionType(EncryptionType):
-    """Public-key (asymmetric) encryption - different keys for encryption and decryption"""
+    pass
     pass
 
 class RSAEncryptionType(PublicKeyEncryptionType):
-    """RSA public-key encryption"""
+    pass
     pass
 
 class AuditingType(OperationalizingSoftgoalType):
-    """Auditing technique type"""
-    description = "Recording system events, activities, or data changes for compliance and verification"
+    pass
 
 class ExceptionHandlingType(OperationalizingSoftgoalType):
-    """Exception Handling technique type"""
-    description = "Managing and responding to runtime errors and exceptions"
+    pass
     
 class SearchType(OperationalizingSoftgoalType):
-    """Search technique type"""
-    description = "Database or information search operations"
+    pass
 
 
 class DisplayType(OperationalizingSoftgoalType):
-    """Display technique type"""
-    description = "Data visualization and presentation operations"
+    pass
 
 
 class RefreshType(OperationalizingSoftgoalType):
-    """Refresh technique type"""
-    description = "Periodic data update operations"
+    pass
 
 
 class LogType(OperationalizingSoftgoalType):
-    """Logging technique type"""
-    description = "Recording system events, activities, or data changes"
+    pass
 
 class AuthorizationType(OperationalizingSoftgoalType):
-    """Authentication technique type"""
-    description = "Verifying user identity and authorizing access"
+    pass
 
 class AuthenticationType(OperationalizingSoftgoalType):
-    """Authentication technique type"""
-    description = "Verifying user identity and authorizing access"
+    pass
 
 class AccessRuleValidationType(OperationalizingSoftgoalType):
-    """Authentication technique type"""
-    description = " A set of rules or conditions applied to data fields (in tables, forms, queries) that verify data entered by users meets specific standards before it's stored."
+    pass
 
 class IdentificationType(OperationalizingSoftgoalType):
-    """Identification operationalization type"""
-    description = "The process of claiming an identity by presenting an identifier (username, user ID, email address, device ID, certificate). Distinct from authentication, which verifies the claimed identity."
+    pass
 
 
 class SyncType(OperationalizingSoftgoalType):
-    """Synchronization technique type"""
-    description = "Synchronizing or updating data across systems"
+    pass
 
 
 class MonitorType(OperationalizingSoftgoalType):
-    """Monitoring technique type"""
-    description = "Tracking, monitoring, or observing system behavior"
+    pass
 
 
 class ValidationType(OperationalizingSoftgoalType):
-    """Validation technique type"""
-    description = "Checking, verifying, or validating data or conditions"
+    pass
 
 
 class NotifyType(OperationalizingSoftgoalType):
-    """Notification technique type"""
-    description = "Sending alerts, notifications, or informing users"
+    pass
 
 
 class StoreType(OperationalizingSoftgoalType):
-    """Storage technique type"""
-    description = "Persisting, saving, or storing data"
+    pass
 
 
 class ExportType(OperationalizingSoftgoalType):
-    """Export/Import technique type"""
-    description = "Exporting or importing data to/from external systems"
+    pass
 
 
 class BackupType(OperationalizingSoftgoalType):
-    """Backup/Restore technique type"""
-    description = "Backing up or restoring data for recovery"
+    pass
 
 
 class CompressionType(OperationalizingSoftgoalType):
-    """Compression technique type"""
-    description = "Data size reduction through encoding algorithms"
+    pass
 
 class LoadBalancingType(OperationalizingSoftgoalType):
-    """Load Balancing technique type"""
-    description = "Distribution of workload across multiple computing resources"
+    pass
 
 class VirtualizationType(OperationalizingSoftgoalType):
-    """Virtualization technique type"""
-    description = "Abstraction of hardware resources into virtual instances"
+    pass
 
 class NetworkMonitoringType(OperationalizingSoftgoalType):
-    """Network Monitoring technique type"""
-    description = "Analysis and inspection of network traffic for security and performance"
+    pass
 
 class DataWarehouseType(OperationalizingSoftgoalType):
-    """Data Warehouse technique type"""
-    description = "Centralized storage and analytics for business intelligence"
+    pass
 
 class SimulationType(OperationalizingSoftgoalType):
-    """Simulation technique type"""
-    description = "Model-based computation for prediction and analysis"
+    pass
 
 class EarlyWarningType(OperationalizingSoftgoalType):
-    """Early Warning technique type"""
-    description = "Provide advance warnings before required actions to allow user preparation time"
+    pass
 
 class MultimodalFeedbackType(OperationalizingSoftgoalType):
-    """Multimodal Feedback technique type"""
-    description = "Provide information through multiple sensory channels (audio, haptic, visual)"
+    pass
 
 class PersonalizedInterfacesType(OperationalizingSoftgoalType):
-    """Personalized Interfaces technique type"""
-    description = "Customize interface based on individual user's experience and needs"
+    pass
 
 class ConciseAudioInstructionsType(OperationalizingSoftgoalType):
-    """Concise Audio Instructions technique type"""
-    description = "Provide minimal, short, and precise audio instructions to minimize cognitive load"
+    pass
 
 class NonSpeechAudioCuesType(OperationalizingSoftgoalType):
-    """Non-Speech Audio Cues technique type"""
-    description = "Use earcons and non-verbal sounds to convey information"
+    pass
 
 class SubMeterPositioningType(OperationalizingSoftgoalType):
-    """Sub-Meter Positioning technique type"""
-    description = "Maintain positioning accuracy at or below specific threshold for safe navigation"
+    pass
 
 class SensorFusionType(OperationalizingSoftgoalType):
-    """Sensor Fusion technique type"""
-    description = "Combine multiple sensor inputs (IMU, Wi-Fi, GPS, etc.) to improve accuracy"
+    pass
 
 class RapidTaskMasteryType(OperationalizingSoftgoalType):
-    """Rapid Task Mastery technique type"""
-    description = "Design interface to enable users to reach performance saturation within minimal repetitions"
+    pass
 
 
 # ----------------------------------------------------------------------------
@@ -736,435 +611,435 @@ class RapidTaskMasteryType(OperationalizingSoftgoalType):
 # ----------------------------------------------------------------------------
 
 class PerformanceSoftgoal(NFRSoftgoal):
-    """Performance softgoal class"""
+    pass
     type = PerformanceType  # Class-level attribute
 
 
 class TimePerformanceSoftgoal(NFRSoftgoal):
-    """Time performance softgoal class"""
+    pass
     type = TimePerformanceType
 
 
 class SpacePerformanceSoftgoal(NFRSoftgoal):
-    """Space performance softgoal class"""
+    pass
     type = SpacePerformanceType
 
 
 class ResponsivenessPerformanceSoftgoal(NFRSoftgoal):
-    """Responsiveness performance softgoal class"""
+    pass
     type = ResponsivenessPerformanceType
 
 
 # Windows Task Manager Performance Softgoal Classes
 class CPUUtilizationSoftgoal(NFRSoftgoal):
-    """CPU utilization softgoal class"""
+    pass
     type = CPUUtilizationType
 
 
 class MemoryUsageSoftgoal(NFRSoftgoal):
-    """Memory usage softgoal class"""
+    pass
     type = MemoryUsageType
 
 
 class DiskTimeSoftgoal(NFRSoftgoal):
-    """Disk time softgoal class"""
+    pass
     type = DiskTimeType
 
 
 class NetworkThroughputSoftgoal(NFRSoftgoal):
-    """Network throughput softgoal class"""
+    pass
     type = NetworkThroughputType
 
 
 class GPUUtilizationSoftgoal(NFRSoftgoal):
-    """GPU utilization softgoal class"""
+    pass
     type = GPUUtilizationType
 
 
 class SecuritySoftgoal(NFRSoftgoal):
-    """Security softgoal class"""
+    pass
     type = SecurityType
 
 
 class ConfidentialitySoftgoal(NFRSoftgoal):
-    """Confidentiality softgoal class"""
+    pass
     type = ConfidentialityType
 
 
 class IntegritySoftgoal(NFRSoftgoal):
-    """Integrity softgoal class"""
+    pass
     type = IntegrityType
 
 
 class AvailabilitySoftgoal(NFRSoftgoal):
-    """Availability softgoal class"""
+    pass
     type = AvailabilityType
 
 
 class UsabilitySoftgoal(NFRSoftgoal):
-    """Usability softgoal class"""
+    pass
     type = UsabilityType
 
 
 class ReliabilitySoftgoal(NFRSoftgoal):
-    """Reliability softgoal class"""
+    pass
     type = ReliabilityType
 
 
 class MaintainabilitySoftgoal(NFRSoftgoal):
-    """Maintainability softgoal class"""
+    pass
     type = MaintainabilityType
 
 
 # Additional NFR Softgoal Classes (alphabetically ordered)
 class AccuracySoftgoal(NFRSoftgoal):
-    """Accuracy softgoal class"""
+    pass
     type = AccuracyType
 
 
 class AdaptabilitySoftgoal(NFRSoftgoal):
-    """Adaptability softgoal class"""
+    pass
     type = AdaptabilityType
 
 
 class BiasSoftgoal(NFRSoftgoal):
-    """Bias softgoal class"""
+    pass
     type = BiasType
 
 
 class CompletenessSoftgoal(NFRSoftgoal):
-    """Completeness softgoal class"""
+    pass
     type = CompletenessType
 
 
 class ComplexitySoftgoal(NFRSoftgoal):
-    """Complexity softgoal class"""
+    pass
     type = ComplexityType
 
 
 class ConsistencySoftgoal(NFRSoftgoal):
-    """Consistency softgoal class"""
+    pass
     type = ConsistencyType
 
 
 class CorrectnessSoftgoal(NFRSoftgoal):
-    """Correctness softgoal class"""
+    pass
     type = CorrectnessType
 
 
 class DomainAdaptationSoftgoal(NFRSoftgoal):
-    """Domain Adaptation softgoal class"""
+    pass
     type = DomainAdaptationType
 
 
 class EfficiencySoftgoal(NFRSoftgoal):
-    """Efficiency softgoal class"""
+    pass
     type = EfficiencyType
 
 
 class EthicsSoftgoal(NFRSoftgoal):
-    """Ethics softgoal class"""
+    pass
     type = EthicsType
 
 
 class ExplainabilitySoftgoal(NFRSoftgoal):
-    """Explainability softgoal class"""
+    pass
     type = ExplainabilityType
 
 
 class FairnessSoftgoal(NFRSoftgoal):
-    """Fairness softgoal class"""
+    pass
     type = FairnessType
 
 
 class FaultToleranceSoftgoal(NFRSoftgoal):
-    """Fault Tolerance softgoal class"""
+    pass
     type = FaultToleranceType
 
 
 class FlexibilitySoftgoal(NFRSoftgoal):
-    """Flexibility softgoal class"""
+    pass
     type = FlexibilityType
 
 
 class InterpretabilitySoftgoal(NFRSoftgoal):
-    """Interpretability softgoal class"""
+    pass
     type = InterpretabilityType
 
 
 class InteroperabilitySoftgoal(NFRSoftgoal):
-    """Interoperability softgoal class"""
+    pass
     type = InteroperabilityType
 
 
 class JustifiabilitySoftgoal(NFRSoftgoal):
-    """Justifiability softgoal class"""
+    pass
     type = JustifiabilityType
 
 
 class PortabilitySoftgoal(NFRSoftgoal):
-    """Portability softgoal class"""
+    pass
     type = PortabilityType
 
 
 class PrivacySoftgoal(NFRSoftgoal):
-    """Privacy softgoal class"""
+    pass
     type = PrivacyType
 
 
 class RepeatabilitySoftgoal(NFRSoftgoal):
-    """Repeatability softgoal class"""
+    pass
     type = RepeatabilityType
 
 
 class RetrainabilitySoftgoal(NFRSoftgoal):
-    """Retrainability softgoal class"""
+    pass
     type = RetrainabilityType
 
 
 class ReproducibilitySoftgoal(NFRSoftgoal):
-    """Reproducibility softgoal class"""
+    pass
     type = ReproducibilityType
 
 
 class ReusabilitySoftgoal(NFRSoftgoal):
-    """Reusability softgoal class"""
+    pass
     type = ReusabilityType
 
 
 class SafetySoftgoal(NFRSoftgoal):
-    """Safety softgoal class"""
+    pass
     type = SafetyType
 
 
 class ScalabilitySoftgoal(NFRSoftgoal):
-    """Scalability softgoal class"""
+    pass
     type = ScalabilityType
 
 
 class TestabilitySoftgoal(NFRSoftgoal):
-    """Testability softgoal class"""
+    pass
     type = TestabilityType
 
 
 class TransparencySoftgoal(NFRSoftgoal):
-    """Transparency softgoal class"""
+    pass
     type = TransparencyType
 
 
 class TraceabilitySoftgoal(NFRSoftgoal):
-    """Traceability softgoal class"""
+    pass
     type = TraceabilityType
 
 
 class TrustSoftgoal(NFRSoftgoal):
-    """Trust softgoal class"""
+    pass
     type = TrustType
 
 
 class LegalComplianceSoftgoal(NFRSoftgoal):
-    """Legal Compliance softgoal class"""
+    pass
     type = LegalComplianceType
 
 
 class LookFeelSoftgoal(NFRSoftgoal):
-    """Look and Feel softgoal class"""
+    pass
     type = LookFeelType
 
 class RecoverabilitySoftgoal(NFRSoftgoal):
-    """Recoverability softgoal class"""
+    pass
     type = RecoverabilityType
 
 class DiagnosabilitySoftgoal(NFRSoftgoal):
-    """Diagnosability softgoal class"""
+    pass
     type = DiagnosabilityType
 
 class CompatibilitySoftgoal(NFRSoftgoal):
-    """Compatibility softgoal class"""
+    pass
     type = CompatibilityType
 
 class DeterministicBehaviorSoftgoal(NFRSoftgoal):
-    """Deterministic Behavior softgoal class"""
+    pass
     type = DeterministicBehaviorType    
 
 class LearnabilitySoftgoal(NFRSoftgoal):
-    """Learnability softgoal class"""
+    pass
     type = LearnabilityType
 
 class MemorabilitySoftgoal(NFRSoftgoal):
-    """Memorability softgoal class"""
+    pass
     type = MemorabilityType
 
 class ErrorPreventionSoftgoal(NFRSoftgoal):
-    """Error Prevention softgoal class"""
+    pass
     type = ErrorPreventionType
 
 class SatisfactionSoftgoal(NFRSoftgoal):
-    """Satisfaction softgoal class"""
+    pass
     type = SatisfactionType
 
 
 # Operationalizing Technique Softgoal Classes   
 
 class IndexingSoftgoal(OperationalizingSoftgoal):
-    """Indexing softgoal class"""
+    pass
     type = IndexingType
 
 
 class CachingSoftgoal(OperationalizingSoftgoal):
-    """Caching softgoal class"""
+    pass
     type = CachingType
 
 
 class EncryptionSoftgoal(OperationalizingSoftgoal):
-    """Encryption softgoal class"""
+    pass
     type = EncryptionType
 
 class SymmetricKeyEncryptionSoftgoal(EncryptionSoftgoal):
-    """Symmetric-key encryption softgoal class"""
+    pass
     type = SymmetricKeyEncryptionType
 
 class PublicKeyEncryptionSoftgoal(EncryptionSoftgoal):
-    """Public-key encryption softgoal class"""
+    pass
     type = PublicKeyEncryptionType
 
 class RSAEncryptionSoftgoal(PublicKeyEncryptionSoftgoal):
-    """RSA encryption softgoal class"""
+    pass
     type = RSAEncryptionType
 
 
 
 class AuditingSoftgoal(OperationalizingSoftgoal):
-    """Auditing softgoal class"""
+    pass
     type = AuditingType
 
 class ExceptionHandlingSoftgoal(OperationalizingSoftgoal):
-    """Exception Handling softgoal class"""
+    pass
     type = ExceptionHandlingType
 
 class SearchSoftgoal(OperationalizingSoftgoal):
-    """Search softgoal class"""
+    pass
     type = SearchType
 
 class DisplaySoftgoal(OperationalizingSoftgoal):
-    """Display softgoal class"""
+    pass
     type = DisplayType
 
 
 class RefreshSoftgoal(OperationalizingSoftgoal):
-    """Refresh softgoal class"""
+    pass
     type = RefreshType
 
 
 class LogSoftgoal(OperationalizingSoftgoal):
-    """Logging softgoal class"""
+    pass
     type = LogType
 
 
 class AuthenticationSoftgoal(OperationalizingSoftgoal):
-    """Authentication softgoal class"""
+    pass
     type = AuthenticationType
 
 class AuthorizationSoftgoal(OperationalizingSoftgoal):
-    """Authentication softgoal class"""
+    pass
     type = AuthorizationType
 
 class AccessRuleValidationSoftgoal(OperationalizingSoftgoal):
-    """Authentication softgoal class"""
+    pass
     type = AccessRuleValidationType
 
 class IdentificationSoftgoal(OperationalizingSoftgoal):
-    """Authentication softgoal class"""
+    pass
     type = IdentificationType
 
 class SyncSoftgoal(OperationalizingSoftgoal):
-    """Synchronization softgoal class"""
+    pass
     type = SyncType
 
 
 class MonitorSoftgoal(OperationalizingSoftgoal):
-    """Monitoring softgoal class"""
+    pass
     type = MonitorType
 
 
 class ValidationSoftgoal(OperationalizingSoftgoal):
-    """Validation softgoal class"""
+    pass
     type = ValidationType
 
 
 class NotifySoftgoal(OperationalizingSoftgoal):
-    """Notification softgoal class"""
+    pass
     type = NotifyType
 
 
 class StoreSoftgoal(OperationalizingSoftgoal):
-    """Storage softgoal class"""
+    pass
     type = StoreType
 
 
 class ExportSoftgoal(OperationalizingSoftgoal):
-    """Export/Import softgoal class"""
+    pass
     type = ExportType
 
 
 class BackupSoftgoal(OperationalizingSoftgoal):
-    """Backup/Restore softgoal class"""
+    pass
     type = BackupType
 
 class CompressionSoftgoal(OperationalizingSoftgoal):
-    """Compression softgoal class"""
+    pass
     type = CompressionType
 
 class LoadBalancingSoftgoal(OperationalizingSoftgoal):
-    """Load Balancing softgoal class"""
+    pass
     type = LoadBalancingType
 
 class VirtualizationSoftgoal(OperationalizingSoftgoal):
-    """Virtualization softgoal class"""
+    pass
     type = VirtualizationType
 
 class NetworkMonitoringSoftgoal(OperationalizingSoftgoal):
-    """Network Monitoring softgoal class"""
+    pass
     type = NetworkMonitoringType
 
 class DataWarehouseSoftgoal(OperationalizingSoftgoal):
-    """Data Warehouse softgoal class"""
+    pass
     type = DataWarehouseType
 
 class SimulationSoftgoal(OperationalizingSoftgoal): 
-    """Simulation softgoal class"""
+    pass
     type = SimulationType
 
 class EarlyWarningSoftgoal(OperationalizingSoftgoal):
-    """Early Warning softgoal class"""
+    pass
     type = EarlyWarningType
 
 class MultimodalFeedbackSoftgoal(OperationalizingSoftgoal):
-    """Multimodal Feedback softgoal class"""
+    pass
     type = MultimodalFeedbackType
 
 class PersonalizedInterfacesSoftgoal(OperationalizingSoftgoal):
-    """Personalized Interfaces softgoal class"""
+    pass
     type = PersonalizedInterfacesType
 
 class ConciseAudioInstructionsSoftgoal(OperationalizingSoftgoal):
-    """Concise Audio Instructions softgoal class"""
+    pass
     type = ConciseAudioInstructionsType
 
 class NonSpeechAudioCuesSoftgoal(OperationalizingSoftgoal):
-    """Non-Speech Audio Cues softgoal class"""
+    pass
     type = NonSpeechAudioCuesType
 
 class SubMeterPositioningSoftgoal(OperationalizingSoftgoal):
-    """Sub-Meter Positioning softgoal class"""
+    pass
     type = SubMeterPositioningType
 
 class SensorFusionSoftgoal(OperationalizingSoftgoal):
-    """Sensor Fusion softgoal class"""
+    pass
     type = SensorFusionType
 
 class RapidTaskMasterySoftgoal(OperationalizingSoftgoal):
-    """Rapid Task Mastery softgoal class"""
+    pass
     type = RapidTaskMasteryType
 
 # ----------------------------------------------------------------------------
@@ -1172,21 +1047,16 @@ class RapidTaskMasterySoftgoal(OperationalizingSoftgoal):
 # ----------------------------------------------------------------------------
 
 class Method(metaclass=MethodMetaClass):
-    """Base class for all methods"""
+    pass
     pass
 
 
 class DecompositionMethod(Method, metaclass=DecompositionMethodMetaClass):
-    """
-    Decomposition method class.
-    
-    NO source attribute! Attribution via ClaimSoftgoals.
-    """
+    pass
     def __init__(self, name: str, parent, offspring: List):
         self.name = name
         self.parent = parent  # Parent type being decomposed
         self.offspring = offspring  # List of child types
-        self.description = ""
     
     def __repr__(self):
         parent_name = self.parent.__name__ if hasattr(self.parent, '__name__') else str(self.parent)
@@ -1194,43 +1064,55 @@ class DecompositionMethod(Method, metaclass=DecompositionMethodMetaClass):
         return f"DecompositionMethod('{self.name}', {parent_name} → {offspring_names})"
 
 class NFRDecompositionMethod(DecompositionMethod, metaclass=NFRDecompositionMethodMetaClass):
-    """Decomposition method for NFR softgoals"""
+    pass
     pass
 
 class PerformanceDecompositionMethod(NFRDecompositionMethod):
-    """All Performance decompositions are instances of this"""
+    pass
     parent = PerformanceType
 
 class SecurityDecompositionMethod(NFRDecompositionMethod):
-    """All Security decompositions are instances of this"""
+    pass
     parent = SecurityType
 
 class UsabilityDecompositionMethod(NFRDecompositionMethod):
-    """All Usability decompositions are instances of this"""
+    pass
     parent = UsabilityType
 
 
 class OperationalizationDecompositionMethod(DecompositionMethod, metaclass=OperationalizationDecompositionMethodMetaClass):
-    """Decomposition method for Operationalization softgoals"""
+    pass
     pass
 
 class AuthorizationDecompositionMethod(OperationalizationDecompositionMethod):
-    """All Authorization decompositions are instances of this"""
+    pass
     parent = AuthorizationType
 
 class ClaimDecompositionMethod(DecompositionMethod, metaclass=ClaimDecompositionMethodMetaClass):
-    """Decomposition method for Claim softgoals"""
+    pass
     pass
 
 
 class Contribution(Proposition, metaclass=ContributionMetaClass):
-    """Contribution relationship between softgoals"""
+    pass
     def __init__(self, source_name: str, target_name: str, contribution_type: ContributionType):
         super().__init__()
         self.source = source_name
         self.target = target_name
         self.type = contribution_type
 
+
+
+# Claim Softgoals (using argument attribute)
+claim_smith = ClaimSoftgoal(argument="According to Smith's User-Centered Performance Metrics")
+claim_tcsec = ClaimSoftgoal(argument="Trusted Computer System Evaluation Criteria (TCSEC/Orange Book, 1985) - Defines security through Confidentiality, Integrity, and Availability")
+claim_windows = ClaimSoftgoal(argument="Microsoft Windows Task Manager - Performance Tab")
+claim_traditional_cs = ClaimSoftgoal(argument="Traditional Computer Science - Time and Space Complexity")
+claim_iso25010 = ClaimSoftgoal(argument="ISO/IEC 25010:2011 Systems and software Quality Requirements and Evaluation (SQuaRE) - Defines usability through five quality sub-characteristics")
+
+# Additional claims for operationalizations
+claim_manduchi_safety = ClaimSoftgoal(argument="Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Advance warnings minimize input to focus on safety")
+claim_manduchi_usability = ClaimSoftgoal(argument="Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Multimodal feedback enables hands-free operation")
 
 # ============================================================================
 # LEVEL 3: GROUND INSTANCES
@@ -1249,7 +1131,6 @@ PerformanceDecomp1 = PerformanceDecompositionMethod(
     parent=PerformanceType,
     offspring=[TimePerformanceType, SpacePerformanceType]
 )
-PerformanceDecomp1.description = "Two-way decomposition of Performance into Time and Space"
 
 # Performance decomposition - Smith's approach
 PerformanceDecomp2 = PerformanceDecompositionMethod(
@@ -1257,7 +1138,6 @@ PerformanceDecomp2 = PerformanceDecompositionMethod(
     parent=PerformanceType,
     offspring=[TimePerformanceType, SpacePerformanceType, ResponsivenessPerformanceType]
 )
-PerformanceDecomp2.description = "Three-way decomposition including user-perceived responsiveness"
 
 # Security decomposition - CIA Triad
 SecurityDecomp1 = SecurityDecompositionMethod(
@@ -1265,7 +1145,6 @@ SecurityDecomp1 = SecurityDecompositionMethod(
     parent=SecurityType,
     offspring=[ConfidentialityType, IntegrityType, AvailabilityType]
 )
-SecurityDecomp1.description = "Classic CIA triad decomposition"
 
 # Performance decomposition - Windows Task Manager approach
 PerformanceDecomp3 = PerformanceDecompositionMethod(
@@ -1273,7 +1152,6 @@ PerformanceDecomp3 = PerformanceDecompositionMethod(
     parent=PerformanceType,
     offspring=[CPUUtilizationType, MemoryUsageType, DiskTimeType, NetworkThroughputType, GPUUtilizationType]
 )
-PerformanceDecomp3.description = "Five-way decomposition based on Windows Task Manager Performance tab: CPU, Memory, Disk, Network, GPU"
 
 AuthorizationDecomp1 = AuthorizationDecompositionMethod(
     name="Authorization Type Decomposition 1",
@@ -1286,7 +1164,6 @@ UsabilityDecomp_ISO25010 = UsabilityDecompositionMethod(
     parent=UsabilityType,
     offspring=[LearnabilityType, EfficiencyType, MemorabilityType, ErrorPreventionType, SatisfactionType]
 )
-UsabilityDecomp_ISO25010.description = "ISO/IEC 25010 standard decomposition of Usability into five quality sub-characteristics"
 
 
 
@@ -1295,72 +1172,28 @@ UsabilityDecomp_ISO25010.description = "ISO/IEC 25010 standard decomposition of 
 # ----------------------------------------------------------------------------
 
 # Claim about PerformanceDecomp1 (Traditional CS)
-claim_performance_traditionalCS = ClaimSoftgoal()
-claim_performance_traditionalCS.type = TraditionalCSPerformanceClaimType
-claim_performance_traditionalCS.topic = SoftgoalTopic("Performance Decomposition")
 
 # Claim about PerformanceDecomp2 (Smith's approach)
-claim_performance_smith = ClaimSoftgoal()
-claim_performance_smith.type = SmithPerformanceClaimType
-claim_performance_smith.topic = SoftgoalTopic("Performance Decomposition")
 
 # Claim about SecurityDecomp1 (CIA Triad)
-claim_security_cia = ClaimSoftgoal()
-claim_security_cia.type = CIATriadClaimType
-claim_security_cia.topic = SoftgoalTopic("Security Decomposition")
 
 # Claim about PerformanceDecomp3 (Windows Task Manager)
-claim_performance_windows = ClaimSoftgoal()
-claim_performance_windows.type = WindowsTaskManagerClaimType
-claim_performance_windows.topic = SoftgoalTopic("Performance Decomposition")
 
 # Claim about Encryption Types
-claim_encryption_types = ClaimSoftgoal()
-claim_encryption_types.type = WikipediaEncryptionTypesClaimType
-claim_encryption_types.topic = SoftgoalTopic("Encryption Sub-classes")
 
 # Claim about UsabilityDecomp_ISO25010
-claim_usability_iso25010 = ClaimSoftgoal()
-claim_usability_iso25010.type = ISO25010UsabilityClaimType
-claim_usability_iso25010.topic = SoftgoalTopic("Usability Decomposition")
-
-claim_earlywarning_safety = ClaimSoftgoal()
-claim_earlywarning_safety.type = ManduchiSafetyClaimType
-claim_earlywarning_safety.topic = SoftgoalTopic("EarlyWarning")
-
-claim_multimodal_usability = ClaimSoftgoal()
-claim_multimodal_usability.type = ManduchiUsabilityClaimType
-claim_multimodal_usability.topic = SoftgoalTopic("MultimodalFeedback")
 
 # Claim about Personalized Interfaces operationalizing Usability
-claim_personalized_usability = ClaimSoftgoal()
-claim_personalized_usability.type = ASSISTUsabilityClaimType
-claim_personalized_usability.topic = SoftgoalTopic("PersonalizedInterfaces")
 
 # Claim about Concise Audio operationalizing Usability
-claim_conciseaudio_usability = ClaimSoftgoal()
-claim_conciseaudio_usability.type = PMCCognitiveLoadClaimType
-claim_conciseaudio_usability.topic = SoftgoalTopic("ConciseAudioInstructions")
 
 # Claim about Non-Speech Sounds operationalizing Usability
-claim_nonspeech_usability = ClaimSoftgoal()
-claim_nonspeech_usability.type = PMCReceptivityClaimType
-claim_nonspeech_usability.topic = SoftgoalTopic("NonSpeechAudioCues")
 
 # Claim about Sub-Meter Positioning operationalizing Safety
-claim_positioning_safety = ClaimSoftgoal()
-claim_positioning_safety.type = SensorsSafetyClaimType
-claim_positioning_safety.topic = SoftgoalTopic("PositioningAccuracy")
 
 # Claim about Sensor Fusion operationalizing Accuracy
-claim_sensorfusion_accuracy = ClaimSoftgoal()
-claim_sensorfusion_accuracy.type = PouloseSensorFusionClaimType
-claim_sensorfusion_accuracy.topic = SoftgoalTopic("SensorFusion")
 
 # Claim about Rapid Task Mastery operationalizing Learnability
-claim_rapidmastery_learnability = ClaimSoftgoal()
-claim_rapidmastery_learnability.type = NielsenLearnabilityClaimType
-claim_rapidmastery_learnability.topic = SoftgoalTopic("RapidTaskMastery")
 
 
 # ----------------------------------------------------------------------------
@@ -1369,22 +1202,17 @@ claim_rapidmastery_learnability.topic = SoftgoalTopic("RapidTaskMastery")
 
 # Example 1: Specific performance NFR using traditional decomposition
 performanceNFR1 = TimePerformanceSoftgoal()
-performanceNFR1.topic = SoftgoalTopic("API Response Time")
 performanceNFR1.priority = PropositionPriority.CRITICAL
-performanceNFR1.description = "API must respond within 200ms for 95th percentile"
 performanceNFR1.label = PropositionLabel.SATISFICED
 
 # Example 2: Specific security NFR using CIA triad
 confidentialityNFR1 = ConfidentialitySoftgoal()
-confidentialityNFR1.topic = SoftgoalTopic("User Password Storage")
 confidentialityNFR1.priority = PropositionPriority.CRITICAL
-confidentialityNFR1.description = "User passwords must be hashed using bcrypt with work factor 12"
 confidentialityNFR1.label = PropositionLabel.SATISFICED
 
 # Example 3: 
 pgp_implementation = PublicKeyEncryptionType()
 pgp_implementation.type = PublicKeyEncryptionType  # Or a more specific type
-pgp_implementation.topic = SoftgoalTopic("Pretty Good Privacy (PGP)")
 pgp_implementation.is_ground_instance = True  # If you have this flag
 
 

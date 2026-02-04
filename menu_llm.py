@@ -26,17 +26,18 @@ class MenuLLM:
     # Token limits per action type (optimized for each use case)
     TOKEN_LIMITS = {
         # SHORT responses (150-200 tokens)
-        "show_examples": 180,              # Browse Examples details - brief
+        "show_examples": 200,              # Browse Examples details - brief
+        "browse_entity": 350,              # Browse Examples with multiple decompositions
         
         # MEDIUM responses (250-300 tokens)  
-        "define_entity": 300,              # What is this? - moderate detail
-        "define_nfr": 300,                 # What is NFR/FR? - moderate detail
-        "explain_classification": 200,     # Classification explanation
-        "explain_specific_classification": 200,  # Specific type classification
-        "analyze_contributions": 200,      # Side effects analysis
+        "define_entity": 280,              # What is this? - moderate detail
+        "define_nfr": 280,                 # What is NFR/FR? - moderate detail
+        "explain_classification": 280,     # Classification explanation
+        "explain_specific_classification": 280,  # Specific type classification
+        "analyze_contributions": 700,      # Side effects analysis (increased)
         
         # LONG responses (350-400 tokens)
-        "decompose": 400,                  # Decomposition - multiple children
+        "decompose": 600,                  # Decomposition - multiple children
         "show_sources": 400,               # Justifications - academic detail
         "show_operationalizations": 400,   # Operationalizations - multiple techniques
         "show_claims": 400,                # Argumentation - detailed claims
@@ -72,11 +73,37 @@ class MenuLLM:
             str - Natural language response from LLM
         """
         try:
+            # DEBUG: Print inputs
+            print()
+            print("="*70)
+            print("MenuLLM.respond() DEBUG")
+            print("="*70)
+            print("Action Type:", action_type)
+            print("User Input:", user_input)
+            print()
+            print("Metamodel Context:")
+            print("-"*70)
+            print(metamodel_context)
+            print("-"*70)
+            
             # Build prompt
             prompt = self._build_prompt(action_type, user_input, metamodel_context)
             
+            print()
+            print("Prompt Template Name:", action_type)
+            print("Full Prompt being sent to LLM:")
+            print("-"*70)
+            print(prompt)
+            print("-"*70)
+            
             # Call LLM with action-specific token limit
             response = self._call_llm(prompt, action_type)
+            
+            print()
+            print("LLM Response:")
+            print("-"*70)
+            print(response)
+            print("="*70)
             
             return response
             

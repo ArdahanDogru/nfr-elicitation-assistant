@@ -60,9 +60,9 @@ def getEntity(name: str):
     Returns metaclass, class, or instance as appropriate.
     
     Handles variations like:
-    - "Performance" Ã¢â€ â€™ tries PerformanceType, PerformanceSoftgoal
-    - "Security" Ã¢â€ â€™ tries SecurityType, SecuritySoftgoal
-    - "Indexing" Ã¢â€ â€™ tries IndexingType, IndexingSoftgoal
+    - "Performance" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tries PerformanceType, PerformanceSoftgoal
+    - "Security" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tries SecurityType, SecuritySoftgoal
+    - "Indexing" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ tries IndexingType, IndexingSoftgoal
     
     Examples:
         >>> getEntity("softgoal")
@@ -120,11 +120,11 @@ def getEntity(name: str):
                 return obj
     
     # If no exact match, try fuzzy matching with Type/Softgoal suffixes
-    # This handles queries like "Performance" Ã¢â€ â€™ "PerformanceType"
+    # This handles queries like "Performance" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "PerformanceType"
     fuzzy_variants = [
-        name_lower + 'type',           # "performance" Ã¢â€ â€™ "performancetype"
-        name_lower + 'softgoal',       # "performance" Ã¢â€ â€™ "performancesoftgoal"
-        name_lower.replace(' ', ''),   # "time performance" Ã¢â€ â€™ "timeperformance"
+        name_lower + 'type',           # "performance" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "performancetype"
+        name_lower + 'softgoal',       # "performance" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "performancesoftgoal"
+        name_lower.replace(' ', ''),   # "time performance" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "timeperformance"
     ]
     
     for variant in fuzzy_variants:
@@ -134,7 +134,7 @@ def getEntity(name: str):
                     return obj
     
     # Still not found? Try partial/prefix matching
-    # This handles queries like "Softgoa" Ã¢â€ â€™ "Softgoal", "Performanc" Ã¢â€ â€™ "PerformanceType"
+    # This handles queries like "Softgoa" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "Softgoal", "Performanc" ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ "PerformanceType"
     # Find all entities that start with the search term (minimum 3 characters)
     if len(name_lower) >= 3:
         matches = []
@@ -550,16 +550,38 @@ def whatIs(entity_or_name, verbose: bool = True) -> str:
     if not entity:
         return f"Entity '{entity_name}' not found"
     
-    # Get basic description
-    description = "No description available"
-    if hasattr(entity, 'description'):
-        description = entity.description
-    elif inspect.isclass(entity) and hasattr(entity, '__doc__') and entity.__doc__:
-        description = entity.__doc__.strip()
+    # Get classification and structure info
+    import inspect
+    import metamodel
     
-    # If not verbose, just return description
+    classification = "Unknown"
+    if inspect.isclass(entity):
+        try:
+            if hasattr(metamodel, 'NFRSoftgoalType') and issubclass(entity, metamodel.NFRSoftgoalType):
+                classification = "NFR (Non-Functional Requirement)"
+            elif hasattr(metamodel, 'FunctionalRequirementType') and issubclass(entity, metamodel.FunctionalRequirementType):
+                classification = "Functional Requirement"
+            elif hasattr(metamodel, 'OperationalizingSoftgoalType') and issubclass(entity, metamodel.OperationalizingSoftgoalType):
+                classification = "Operationalizing Softgoal"
+            elif hasattr(metamodel, 'OperationalizingType') and issubclass(entity, metamodel.OperationalizingType):
+                classification = "Operationalizing Softgoal"
+        except (TypeError, AttributeError):
+            pass
+    
+    # If not verbose, return minimal structural info
     if not verbose:
-        return description
+        result = f"**Type:** {classification}\n\n"
+        
+        # Add decomposition info if available (ONLY direct children)
+        if inspect.isclass(entity):
+            children = getChildren(entity)
+            if children:
+                child_names = [format_entity_name(getEntityName(c)) for c in children]
+                result += f"**Decomposes into ({len(children)} direct children):**\n"
+                for child_name in child_names:
+                    result += f"• {child_name}\n"
+        
+        return result
     
     # Build comprehensive information
     result = []
@@ -589,22 +611,10 @@ def whatIs(entity_or_name, verbose: bool = True) -> str:
     
     
     # Don't show redundant header - user already knows what they searched for
-    result.append(f"🔍 {classification}")
+    result.append(f"ðŸ” {classification}")
     
-    # Description
-    result.append(f"\nDescription:")
-    result.append(f"  {description}")
     
-    # For classes, show children only (not parent)
-    if inspect.isclass(entity):
-        # Children (subclasses)
-        children = getChildren(entity)
-        if children:
-            result.append(f"\nSubclasses: {len(children)}")
-            for child in children:
-                child_name = format_entity_name(getEntityName(child))
-                child_desc = getattr(child, 'description', 'No description')
-                result.append(f"  • {child_name}: {child_desc}")
+    # Decomposition info not included - used by "What is X?" which shouldnt mention it
     
     # Attributes
     if inspect.isclass(entity):
@@ -628,28 +638,10 @@ def whatIs(entity_or_name, verbose: bool = True) -> str:
                     value_str = value.__name__
                 else:
                     value_str = str(value)
-                result.append(f"  • {attr} = {value_str}")
+                result.append(f"  â€¢ {attr} = {value_str}")
             else:
                 # For classes, just show attribute name
-                result.append(f"  • {attr}")
-    
-    # Decompositions (if it's a SoftgoalType)
-    if inspect.isclass(entity):
-        try:
-            # Check if it's a SoftgoalType
-            if hasattr(metamodel, 'SoftgoalType') and issubclass(entity, metamodel.SoftgoalType):
-                decomps = getDecompositionsFor(entity)
-                if decomps:
-                    result.append(f"\nDecompositions: {len(decomps)}")
-                    for decomp in decomps:
-                        result.append(f"  • {decomp.name}")
-                        if hasattr(decomp, 'offspring'):
-                            offspring_names = [format_entity_name(getEntityName(o)) for o in decomp.offspring]
-                            result.append(f"    Offspring: {', '.join(offspring_names)}")
-                        if hasattr(decomp, 'description') and decomp.description:
-                            result.append(f"    Description: {decomp.description}")
-        except (TypeError, AttributeError):
-            pass  # Not a SoftgoalType
+                result.append(f"  â€¢ {attr}")
     
     result.append("=" * 70)
     
@@ -964,7 +956,7 @@ if __name__ == "__main__":
     print(f"   Indexing contributions: {contribs}")
     
     check = checkContribution("Indexing", "Performance")
-    print(f"   Indexing Ã¢â€ â€™ Performance: {check}")
+    print(f"   Indexing ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Performance: {check}")
     
     # Test 6: NFR check
     print("\n6. NFR Check:")
@@ -977,5 +969,5 @@ if __name__ == "__main__":
     print(f"   OperationalizingSoftgoal instances: {len(ops)}")
     
     print("\n" + "="*70)
-    print("Ã¢Å“â€¦ All queries working!")
+    print("ÃƒÂ¢Ã…â€œÃ¢â‚¬Â¦ All queries working!")
     print("="*70)

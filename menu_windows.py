@@ -842,8 +842,6 @@ class DecompositionWindow(ModuleWindow):
                     
                     for i, decomp in enumerate(decomps, 1):
                         response += f"{i}. {decomp.name}\n"
-                        if hasattr(decomp, 'description') and decomp.description:
-                            response += f"   Description: {decomp.description}\n"
                         if hasattr(decomp, 'offspring'):
                             # Format offspring names
                             offspring_names = [format_entity_name(o.__name__) for o in decomp.offspring]
@@ -863,10 +861,6 @@ class DecompositionWindow(ModuleWindow):
                             for j, child in enumerate(children, 1):
                                 child_name = format_entity_name(getEntityName(child))
                                 response += f"{j}. {child_name}\n"
-                                if hasattr(child, 'description') and child.description:
-                                    response += f"   Description: {child.description}\n"
-                                elif child.__doc__:
-                                    response += f"   Description: {child.__doc__.strip()}\n"
                                 response += "\n"
                             
                             response += "\n💡 These are subtypes (isA relationships), not decomposition methods."
@@ -1054,25 +1048,54 @@ class AttributionWindow(ModuleWindow):
                     all_claims_for_type = []
                     parent_type_name = entity_name.replace('Type', '').replace('Softgoal', '')
                     
+                    # Collect ALL ClaimSoftgoals (matching will filter later)
                     for name, obj in inspect.getmembers(metamodel):
                         if hasattr(metamodel, 'ClaimSoftgoal'):
                             if isinstance(obj, metamodel.ClaimSoftgoal):
-                                claim_topic = getattr(obj, 'topic', None)
-                                if claim_topic:
-                                    topic_str = str(claim_topic)
-                                    # Check if this claim's topic matches the parent entity
-                                    if parent_type_name.lower() in topic_str.lower():
-                                        claim_type = getattr(obj, 'type', None)
-                                        all_claims_for_type.append({
-                                            'name': name,
-                                            'type': claim_type,
-                                            'topic': topic_str
-                                        })
+                                argument_str = getattr(obj, 'argument', '')
+                                if argument_str:
+                                    all_claims_for_type.append({
+                                        'name': name,
+                                        'argument': argument_str
+                                    })
                     
-                    # Match claims to decompositions by order (1-to-1 mapping)
+                    # Match claims to decompositions by content (what they decompose into)
+                    def find_matching_claim(decomp, all_claims):
+                        """Find the claim that best matches this decomposition"""
+                        if not hasattr(decomp, 'offspring') or not decomp.offspring:
+                            return None
+                        
+                        # Get offspring names for this decomposition
+                        offspring_names = [o.__name__.lower() for o in decomp.offspring]
+                        
+                        # Try to match based on offspring or keywords in claim argument
+                        best_match = None
+                        for claim in all_claims:
+                            argument = claim.get('argument', '').lower()
+                            
+                            # Match by keywords in argument vs offspring
+                            if 'cpu' in argument or 'windows' in argument or 'task manager' in argument:
+                                # Check for Windows-specific offspring
+                                if any('cpu' in name or 'memory' in name or 'disk' in name or 'network' in name or 'gpu' in name for name in offspring_names):
+                                    best_match = claim
+                                    break
+                            elif 'smith' in argument or 'user-centered' in argument:
+                                # Check for Smith's approach (includes Responsiveness)
+                                if any('responsiveness' in name for name in offspring_names):
+                                    best_match = claim
+                                    break
+                            elif 'traditional' in argument or 'time and space' in argument:
+                                # Check for traditional CS (Time + Space only)
+                                if ('time' in ' '.join(offspring_names) and 'space' in ' '.join(offspring_names) and 
+                                    'responsiveness' not in ' '.join(offspring_names)):
+                                    best_match = claim
+                                    break
+                        
+                        return best_match
+                    
                     for i, decomp in enumerate(decomps, 1):
-                        # Get the claim at the same index (if it exists)
-                        claim = all_claims_for_type[i-1] if i-1 < len(all_claims_for_type) else None
+                        # Find the claim that matches this decomposition's content
+                        claim = find_matching_claim(decomp, all_claims_for_type)
                         
                         # Format offspring names
                         offspring_names = []
@@ -1082,14 +1105,9 @@ class AttributionWindow(ModuleWindow):
                         decomp_desc = getattr(decomp, 'description', '')
                         
                         # Display decomposition with its claim
-                        # Use claim type description as the source/who proposed it
                         source_description = "Not specified"
-                        if claim and claim['type']:
-                            claim_type = claim['type']
-                            if hasattr(claim_type, 'description'):
-                                source_description = claim_type.description
-                            else:
-                                source_description = getattr(claim_type, '__name__', str(claim_type))
+                        if claim and claim.get('argument'):
+                            source_description = claim['argument']
                         
                         response += f"ðŸ“š {source_description}\n"
                         response += "-" * 50 + "\n\n"
@@ -1139,26 +1157,20 @@ class AttributionWindow(ModuleWindow):
                                     if (entity_normalized in topic_normalized or 
                                         topic_normalized in entity_normalized):
                                         
-                                        claim_type = getattr(obj, 'type', None)
+                                        argument_str = getattr(obj, 'argument', '')
                                         operationalization_claims.append({
                                             'name': name,
-                                            'type': claim_type,
-                                            'topic': topic_str,
+                                            'argument': argument_str,
                                             'obj': obj
                                         })
                     
                     if operationalization_claims:
                         # Show contribution claims WITHOUT header
                         for claim in operationalization_claims:
-                            claim_type = claim['type']
-                            
-                            # Get claim description (source)
+                            # Get claim argument (source)
                             source_description = "Not specified"
-                            if claim_type:
-                                if hasattr(claim_type, 'description'):
-                                    source_description = claim_type.description
-                                else:
-                                    source_description = getattr(claim_type, '__name__', str(claim_type))
+                            if claim.get('argument'):
+                                source_description = claim['argument']
                             
                             response += f"ðŸ“š {source_description}\n"
                             response += "-" * 50 + "\n\n"
@@ -1531,41 +1543,76 @@ class ExamplesWindow(ModuleWindow):
                 return
             
             name, obj = self.current_examples[num - 1]
+            from nfr_queries import getDecompositionsFor, getEntityName, format_entity_name as fmt_name
+            import metamodel
             import inspect
             
-            details = f"📋 {name}\n" + "=" * 60 + "\n\n"
+            # Get type classification
+            classification = "Unknown"
+            if inspect.isclass(obj):
+                try:
+                    if hasattr(metamodel, 'NFRSoftgoalType') and issubclass(obj, metamodel.NFRSoftgoalType):
+                        classification = "NFR (Non-Functional Requirement)"
+                    elif hasattr(metamodel, 'FunctionalRequirementType') and issubclass(obj, metamodel.FunctionalRequirementType):
+                        classification = "Functional Requirement"
+                    elif hasattr(metamodel, 'OperationalizingSoftgoalType') and issubclass(obj, metamodel.OperationalizingSoftgoalType):
+                        classification = "Operationalizing Softgoal"
+                    elif hasattr(metamodel, 'OperationalizingType') and issubclass(obj, metamodel.OperationalizingType):
+                        classification = "Operationalizing Softgoal"
+                except (TypeError, AttributeError):
+                    pass
             
-            if hasattr(obj, 'type'):
-                type_name = getattr(obj.type, '__name__', str(obj.type))
-                details += f"Type: {type_name}\n\n"
-                
-                if hasattr(obj.type, 'description'):
-                    desc = obj.type.description
-                    details += f"Type Description: {desc}\n\n"
+            # Get all decomposition methods
+            decomp_info = ""
+            if inspect.isclass(obj):
+                decomps = getDecompositionsFor(obj)
+                if decomps:
+                    decomp_info = f"\n\nHas {len(decomps)} decomposition method(s):\n\n"
+                    for i, decomp in enumerate(decomps, 1):
+                        decomp_name = getattr(decomp, 'name', f'Decomposition {i}')
+                        decomp_info += f"{i}. {decomp_name}\n"
+                        if hasattr(decomp, 'offspring') and decomp.offspring:
+                            offspring_names = [fmt_name(o.__name__) for o in decomp.offspring]
+                            decomp_info += f"   Offspring: {', '.join(offspring_names)}\n"
+                        decomp_info += "\n"
             
-            if hasattr(obj, 'topic'):
-                details += f"Topic: {obj.topic}\n\n"
+            # Combine context
+            combined_context = f"Type: {classification}{decomp_info}"
             
-            # Pass through MenuLLM for natural language response
+            # Pass through MenuLLM
             self.details_label.setText("⏳ Generating explanation...")
-            QApplication.processEvents()  # Force immediate UI update
-
+            QApplication.processEvents()
 
             # Use QTimer to allow UI update before LLM generation
             def _generate_and_update():
                 if self.menu_llm:
                     try:
+                        # DEBUG: Print context
+                        print()
+                        print("="*70)
+                        print("BROWSE EXAMPLES (ExamplesWindow) - LLM INPUT DEBUG")
+                        print("="*70)
+                        print("Action Type: browse_entity")
+                        print("User Input:", name)
+                        print()
+                        print("Context being sent to LLM:")
+                        print("-"*70)
+                        print(combined_context)
+                        print("-"*70)
+                        
                         llm_response = self.menu_llm.respond(
-                            action_type="show_examples",
+                            action_type="browse_entity",
                             user_input=name,
-                            metamodel_context=details
+                            metamodel_context=combined_context
                         )
                         self.details_label.setText(llm_response)
                     except Exception:
-                        # Fallback to raw details on LLM error
-                        self.details_label.setText(details)
+                        # Fallback to raw context on LLM error
+                        fallback = f"📋 {name}\n{'='*60}\n\n{combined_context}"
+                        self.details_label.setText(fallback)
                 else:
-                    self.details_label.setText(details)
+                    fallback = f"📋 {name}\n{'='*60}\n\n{combined_context}"
+                    self.details_label.setText(fallback)
             
             QTimer.singleShot(50, _generate_and_update)
         except ValueError:
@@ -1746,46 +1793,85 @@ class NFRTypesWindow(ModuleWindow):
                 return
             
             name, obj = self.current_examples[num - 1]
-            from nfr_queries import format_entity_name
+            from nfr_queries import whatIs, format_entity_name
+            
+            # Use whatIs() - same as "What is X?" - no docstrings!
+            self.details_label.setText("⏳ Looking up information...")
+            QApplication.processEvents()
+            
+            # Get classification and all decomposition methods
+            from nfr_queries import getDecompositionsFor, getEntityName, format_entity_name as fmt_name
+            import metamodel
             import inspect
             
-            details = f"📋 {name}\n" + "=" * 60 + "\n\n"
-            if hasattr(obj, 'description'):
-                details += f"Description: {obj.description}\n\n"
-            elif obj.__doc__:
-                details += f"Description: {obj.__doc__.strip()}\n\n"
+            # Get type classification
+            classification = "Unknown"
+            if inspect.isclass(obj):
+                try:
+                    if hasattr(metamodel, 'NFRSoftgoalType') and issubclass(obj, metamodel.NFRSoftgoalType):
+                        classification = "NFR (Non-Functional Requirement)"
+                    elif hasattr(metamodel, 'FunctionalRequirementType') and issubclass(obj, metamodel.FunctionalRequirementType):
+                        classification = "Functional Requirement"
+                    elif hasattr(metamodel, 'OperationalizingSoftgoalType') and issubclass(obj, metamodel.OperationalizingSoftgoalType):
+                        classification = "Operationalizing Softgoal"
+                    elif hasattr(metamodel, 'OperationalizingType') and issubclass(obj, metamodel.OperationalizingType):
+                        classification = "Operationalizing Softgoal"
+                except (TypeError, AttributeError):
+                    pass
             
-            if hasattr(obj, '__bases__') and obj.__bases__:
-                parent_names = [b.__name__ for b in obj.__bases__ if b.__name__ != 'object']
-                if parent_names:
-                    details += f"Parent: {', '.join(parent_names)}\n\n"
+            # Get all decomposition methods (not just union of children)
+            decomp_info = ""
+            if inspect.isclass(obj):
+                decomps = getDecompositionsFor(obj)
+                if decomps:
+                    decomp_info = f"\n\nHas {len(decomps)} decomposition method(s):\n\n"
+                    for i, decomp in enumerate(decomps, 1):
+                        decomp_name = getattr(decomp, 'name', f'Decomposition {i}')
+                        decomp_info += f"{i}. {decomp_name}\n"
+                        if hasattr(decomp, 'offspring') and decomp.offspring:
+                            offspring_names = [fmt_name(o.__name__) for o in decomp.offspring]
+                            decomp_info += f"   Offspring: {', '.join(offspring_names)}\n"
+                        decomp_info += "\n"
             
-            if hasattr(obj, '__subclasses__'):
-                children = obj.__subclasses__()
-                if children:
-                    child_names = [format_entity_name(c.__name__) for c in children]
-                    details += f"Subclasses ({len(children)}): {', '.join(child_names)}\n\n"
+            # Combine context
+            combined_context = f"Type: {classification}{decomp_info}"
             
-            # Pass through MenuLLM for natural language response
-            self.details_label.setText("⏳ Generating explanation...")
-            QApplication.processEvents()  # Force immediate UI update
-
-
-            # Use QTimer to allow UI update before LLM generation
+            # Use MenuLLM to generate natural explanation
             def _generate_and_update():
                 if self.menu_llm:
                     try:
+                        # DEBUG: Print context and action_type
+                        print("="*70)
+                        print("BROWSE EXAMPLES - LLM INPUT DEBUG")
+                        print("="*70)
+                        print("Action Type: browse_entity")
+                        print("User Input:", format_entity_name(name))
+                        print()
+                        print("Context being sent to LLM:")
+                        print("-"*70)
+                        print(combined_context)
+                        print("-"*70)
+                        
                         llm_response = self.menu_llm.respond(
-                            action_type="show_examples",
-                            user_input=name,
-                            metamodel_context=details
+                            action_type="browse_entity",
+                            user_input=format_entity_name(name),
+                            metamodel_context=combined_context
                         )
+                        
+                        print()
+                        print("LLM Response:")
+                        print("-"*70)
+                        print(llm_response)
+                        print("="*70)
+                        
                         self.details_label.setText(llm_response)
                     except Exception:
-                        # Fallback to raw details on LLM error
-                        self.details_label.setText(details)
+                        # Fallback to raw info on LLM error
+                        fallback = f"📋 {format_entity_name(name)}\n{'='*60}\n\n{combined_context}"
+                        self.details_label.setText(fallback)
                 else:
-                    self.details_label.setText(details)
+                    fallback = f"📋 {format_entity_name(name)}\n{'='*60}\n\n{combined_context}"
+                    self.details_label.setText(fallback)
             
             QTimer.singleShot(50, _generate_and_update)
         except ValueError:
@@ -1960,46 +2046,85 @@ class OperationalizingSoftgoalsWindow(ModuleWindow):
                 return
             
             name, obj = self.current_examples[num - 1]
-            from nfr_queries import format_entity_name
+            from nfr_queries import whatIs, format_entity_name
+            
+            # Use whatIs() - same as "What is X?" - no docstrings!
+            self.details_label.setText("⏳ Looking up information...")
+            QApplication.processEvents()
+            
+            # Get classification and all decomposition methods
+            from nfr_queries import getDecompositionsFor, getEntityName, format_entity_name as fmt_name
+            import metamodel
             import inspect
             
-            details = f"📋 {name}\n" + "=" * 60 + "\n\n"
-            if hasattr(obj, 'description'):
-                details += f"Description: {obj.description}\n\n"
-            elif obj.__doc__:
-                details += f"Description: {obj.__doc__.strip()}\n\n"
+            # Get type classification
+            classification = "Unknown"
+            if inspect.isclass(obj):
+                try:
+                    if hasattr(metamodel, 'NFRSoftgoalType') and issubclass(obj, metamodel.NFRSoftgoalType):
+                        classification = "NFR (Non-Functional Requirement)"
+                    elif hasattr(metamodel, 'FunctionalRequirementType') and issubclass(obj, metamodel.FunctionalRequirementType):
+                        classification = "Functional Requirement"
+                    elif hasattr(metamodel, 'OperationalizingSoftgoalType') and issubclass(obj, metamodel.OperationalizingSoftgoalType):
+                        classification = "Operationalizing Softgoal"
+                    elif hasattr(metamodel, 'OperationalizingType') and issubclass(obj, metamodel.OperationalizingType):
+                        classification = "Operationalizing Softgoal"
+                except (TypeError, AttributeError):
+                    pass
             
-            if hasattr(obj, '__bases__') and obj.__bases__:
-                parent_names = [b.__name__ for b in obj.__bases__ if b.__name__ != 'object']
-                if parent_names:
-                    details += f"Parent: {', '.join(parent_names)}\n\n"
+            # Get all decomposition methods (not just union of children)
+            decomp_info = ""
+            if inspect.isclass(obj):
+                decomps = getDecompositionsFor(obj)
+                if decomps:
+                    decomp_info = f"\n\nHas {len(decomps)} decomposition method(s):\n\n"
+                    for i, decomp in enumerate(decomps, 1):
+                        decomp_name = getattr(decomp, 'name', f'Decomposition {i}')
+                        decomp_info += f"{i}. {decomp_name}\n"
+                        if hasattr(decomp, 'offspring') and decomp.offspring:
+                            offspring_names = [fmt_name(o.__name__) for o in decomp.offspring]
+                            decomp_info += f"   Offspring: {', '.join(offspring_names)}\n"
+                        decomp_info += "\n"
             
-            if hasattr(obj, '__subclasses__'):
-                children = obj.__subclasses__()
-                if children:
-                    child_names = [format_entity_name(c.__name__) for c in children]
-                    details += f"Subclasses ({len(children)}): {', '.join(child_names)}\n\n"
+            # Combine context
+            combined_context = f"Type: {classification}{decomp_info}"
             
-            # Pass through MenuLLM for natural language response
-            self.details_label.setText("⏳ Generating explanation...")
-            QApplication.processEvents()  # Force immediate UI update
-
-
-            # Use QTimer to allow UI update before LLM generation
+            # Use MenuLLM to generate natural explanation
             def _generate_and_update():
                 if self.menu_llm:
                     try:
+                        # DEBUG: Print context and action_type
+                        print("="*70)
+                        print("BROWSE EXAMPLES - LLM INPUT DEBUG")
+                        print("="*70)
+                        print("Action Type: browse_entity")
+                        print("User Input:", format_entity_name(name))
+                        print()
+                        print("Context being sent to LLM:")
+                        print("-"*70)
+                        print(combined_context)
+                        print("-"*70)
+                        
                         llm_response = self.menu_llm.respond(
-                            action_type="show_examples",
-                            user_input=name,
-                            metamodel_context=details
+                            action_type="browse_entity",
+                            user_input=format_entity_name(name),
+                            metamodel_context=combined_context
                         )
+                        
+                        print()
+                        print("LLM Response:")
+                        print("-"*70)
+                        print(llm_response)
+                        print("="*70)
+                        
                         self.details_label.setText(llm_response)
                     except Exception:
-                        # Fallback to raw details on LLM error
-                        self.details_label.setText(details)
+                        # Fallback to raw info on LLM error
+                        fallback = f"📋 {format_entity_name(name)}\n{'='*60}\n\n{combined_context}"
+                        self.details_label.setText(fallback)
                 else:
-                    self.details_label.setText(details)
+                    fallback = f"📋 {format_entity_name(name)}\n{'='*60}\n\n{combined_context}"
+                    self.details_label.setText(fallback)
             
             QTimer.singleShot(50, _generate_and_update)
         except ValueError:
@@ -2168,40 +2293,76 @@ class ClaimSoftgoalsWindow(ModuleWindow):
                 return
             
             name, obj = self.current_examples[num - 1]
+            from nfr_queries import getDecompositionsFor, getEntityName, format_entity_name as fmt_name
+            import metamodel
             import inspect
             
-            details = f"📋 {name}\n" + "=" * 60 + "\n\n"
+            # Get type classification
+            classification = "Unknown"
+            if inspect.isclass(obj):
+                try:
+                    if hasattr(metamodel, 'NFRSoftgoalType') and issubclass(obj, metamodel.NFRSoftgoalType):
+                        classification = "NFR (Non-Functional Requirement)"
+                    elif hasattr(metamodel, 'FunctionalRequirementType') and issubclass(obj, metamodel.FunctionalRequirementType):
+                        classification = "Functional Requirement"
+                    elif hasattr(metamodel, 'OperationalizingSoftgoalType') and issubclass(obj, metamodel.OperationalizingSoftgoalType):
+                        classification = "Operationalizing Softgoal"
+                    elif hasattr(metamodel, 'OperationalizingType') and issubclass(obj, metamodel.OperationalizingType):
+                        classification = "Operationalizing Softgoal"
+                except (TypeError, AttributeError):
+                    pass
             
-            if hasattr(obj, 'type'):
-                type_name = getattr(obj.type, '__name__', str(obj.type))
-                details += f"Type: {type_name}\n\n"
-                
-                if hasattr(obj.type, 'description'):
-                    details += f"Type Description: {obj.type.description}\n\n"
+            # Get all decomposition methods
+            decomp_info = ""
+            if inspect.isclass(obj):
+                decomps = getDecompositionsFor(obj)
+                if decomps:
+                    decomp_info = f"\n\nHas {len(decomps)} decomposition method(s):\n\n"
+                    for i, decomp in enumerate(decomps, 1):
+                        decomp_name = getattr(decomp, 'name', f'Decomposition {i}')
+                        decomp_info += f"{i}. {decomp_name}\n"
+                        if hasattr(decomp, 'offspring') and decomp.offspring:
+                            offspring_names = [fmt_name(o.__name__) for o in decomp.offspring]
+                            decomp_info += f"   Offspring: {', '.join(offspring_names)}\n"
+                        decomp_info += "\n"
             
-            if hasattr(obj, 'topic'):
-                details += f"Topic: {obj.topic}\n\n"
+            # Combine context
+            combined_context = f"Type: {classification}{decomp_info}"
             
-            # Pass through MenuLLM for natural language response
+            # Pass through MenuLLM
             self.details_label.setText("⏳ Generating explanation...")
-            QApplication.processEvents()  # Force immediate UI update
-
+            QApplication.processEvents()
 
             # Use QTimer to allow UI update before LLM generation
             def _generate_and_update():
                 if self.menu_llm:
                     try:
+                        # DEBUG: Print context
+                        print()
+                        print("="*70)
+                        print("BROWSE EXAMPLES (ExamplesWindow) - LLM INPUT DEBUG")
+                        print("="*70)
+                        print("Action Type: browse_entity")
+                        print("User Input:", name)
+                        print()
+                        print("Context being sent to LLM:")
+                        print("-"*70)
+                        print(combined_context)
+                        print("-"*70)
+                        
                         llm_response = self.menu_llm.respond(
-                            action_type="show_examples",
+                            action_type="browse_entity",
                             user_input=name,
-                            metamodel_context=details
+                            metamodel_context=combined_context
                         )
                         self.details_label.setText(llm_response)
                     except Exception:
-                        # Fallback to raw details on LLM error
-                        self.details_label.setText(details)
+                        # Fallback to raw context on LLM error
+                        fallback = f"📋 {name}\n{'='*60}\n\n{combined_context}"
+                        self.details_label.setText(fallback)
                 else:
-                    self.details_label.setText(details)
+                    fallback = f"📋 {name}\n{'='*60}\n\n{combined_context}"
+                    self.details_label.setText(fallback)
             
             QTimer.singleShot(50, _generate_and_update)
         except ValueError:
@@ -2693,6 +2854,19 @@ class WhatsThisWindow(ModuleWindow):
                 return
             
             info = whatIs(entity, verbose=True)
+            
+            # DEBUG: Print context for "What is X?"
+            print()
+            print("="*70)
+            print("WHAT IS X (WhatsThisWindow) - LLM INPUT DEBUG")
+            print("="*70)
+            print("Action Type: define_entity")
+            print("User Input:", text)
+            print()
+            print("Context being sent to LLM:")
+            print("-"*70)
+            print(info)
+            print("-"*70)
             
             # Pass through MenuLLM for natural language response
             if self.menu_llm:
@@ -3798,13 +3972,10 @@ class ArgumentationDecompositionWindow(ModuleWindow):
                     for i, claim in enumerate(claim_decomps, 1):
                         response += f"**ðŸ“š Claim {i}: {claim.name}**\n\n"
                         
-                        # Description/justification
-                        if hasattr(claim, 'description') and claim.description:
-                            response += f"   **Justification**: {claim.description}\n\n"
                         
-                        # Source/attribution
-                        if hasattr(claim, 'source') and claim.source:
-                            response += f"   **Source**: {claim.source}\n\n"
+                        # Source (from claim argument)
+                        if hasattr(claim, 'argument') and claim.argument:
+                            response += f"   **Source**: {claim.argument}\n\n"
                         
                         # What it decomposes into
                         if hasattr(claim, 'offspring') and claim.offspring:

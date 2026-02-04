@@ -6,18 +6,31 @@ Structured prompts for different menu actions
 
 MENU_PROMPTS = {
     "define_entity": """
-The user asked about an entity: {user_input}
+The user asked: "What is {user_input}?"
 
-Here is the information from the NFR Framework metamodel:
+Here is the basic information from the NFR Framework metamodel:
 {context}
 
-Provide a clear, practical explanation of this entity. Include:
-1. A concise definition of what it is
-2. Why it matters in requirements engineering  
-3. A concrete example from software development
-4. Related entities if relevant
+Provide a brief, factual response (2-3 sentences) that:
+1. States whether this is a Functional Requirement (FR) or Non-Functional Requirement (NFR) type
+2. Briefly explains what category it belongs to and its general purpose
 
-Keep it conversational but technically accurate, 2-4 paragraphs.
+Keep it simple and direct - just classification and brief context. DO NOT mention decomposition or sub-types.
+""",
+
+
+    "browse_entity": """
+Explain {user_input} based on this information from the NFR Framework metamodel:
+
+{context}
+
+Provide a clear, direct explanation (3-4 sentences):
+1. Start with: "{user_input} is a [type] that [purpose]"
+2. If there are multiple decomposition methods, explain each one
+3. For each method, list what it decomposes into using the EXACT offspring names
+
+DO NOT use phrases like "the user is exploring" or "the user is browsing". Write as if explaining directly.
+Be concise but cover all decomposition methods shown.
 """,
 
     "define_nfr": """
