@@ -354,8 +354,8 @@ class HomeScreen(QMainWindow):
                 "callback": self.open_info
             },
             {
-                "title": "📖 What is (NFR/FR)?",
-                "description": "Look up any NFR or operationalization to start exploring",
+                "title": "📖 What is X(NFR)?",
+                "description": "Enter an NFR of your choice",
                 "callback": self.open_whats_this,
                 "badge": "🚀 START HERE"
             },
@@ -370,14 +370,14 @@ class HomeScreen(QMainWindow):
                 "callback": self.open_operationalizations
             },
             {
-                "title": "📚 What is the justification? (Claim)",
-                "description": "See who proposed the decomposition approach and why",
-                "callback": self.open_claims
-            },
-            {
                 "title": "⚡ Possible side effects? (Contributions)",
                 "description": "See which NFRs an operationalization affects",
                 "callback": self.open_side_effects
+            },
+            {
+                "title": "📚 What is the justification? (Claim)",
+                "description": "See who proposed the decomposition approach and why",
+                "callback": self.open_claims
             },
             {
                 "title": "📋 Browse Examples",
@@ -390,7 +390,7 @@ class HomeScreen(QMainWindow):
                 ]
             },
             {
-                "title": "📋 Requirement Classification",
+                "title": "✅ Requirement Classification",
                 "description": "Classify requirements into:\n• FR / NFR\n• their specific types",
                 "callback": self.open_classification
             }
@@ -508,7 +508,7 @@ class HomeScreen(QMainWindow):
         """Open How to achieve X? - shows operationalizations for NFRs"""
         print("Opening How to achieve X? (Operationalizations)...")
         self.hide()
-        self.operationalizations_window = OperationalizationDecompositionWindow("How to achieve X? (Operationalizations)", self)
+        self.operationalizations_window = OperationalizationDecompositionWindow("Operationalizations - Functional Decisions", self)
         self.operationalizations_window.show()
     
     def open_examples(self):

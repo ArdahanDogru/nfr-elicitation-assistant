@@ -902,7 +902,7 @@ class DecompositionWindow(ModuleWindow):
         if hasattr(self, 'current_entity'):
             self.hide()
             self.op_window = OperationalizationDecompositionWindow(
-                "How to achieve X? (Operationalizations)",
+                "Operationalizations - Functional Decisions",
                 self.parent_home_screen,
                 initial_entity=self.current_entity
             )
