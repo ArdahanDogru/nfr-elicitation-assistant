@@ -610,42 +610,10 @@ def whatIs(entity_or_name, verbose: bool = True) -> str:
     display_name = entity_name.replace('Type', '').replace('Softgoal', '')
     
     
-    # Don't show redundant header - user already knows what they searched for
-    result.append(f"ðŸ” {classification}")
-    
-    
-    # Decomposition info not included - used by "What is X?" which shouldnt mention it
-    
-    # Attributes
-    if inspect.isclass(entity):
-        attributes = getAttributes(entity)
-    else:
-        # For instances, get attributes from their class
-        attributes = getAttributes(type(entity))
-    
-    if attributes:
-        result.append(f"\nAttributes: {len(attributes)}")
-        for attr in attributes:
-            # Try to get the value if it's an instance
-            if not inspect.isclass(entity) and hasattr(entity, attr):
-                value = getattr(entity, attr)
-                # Format the value
-                if inspect.isclass(value):
-                    value_str = value.__name__
-                elif hasattr(value, 'name'):  # Enum
-                    value_str = value.name
-                elif hasattr(value, '__name__'):
-                    value_str = value.__name__
-                else:
-                    value_str = str(value)
-                result.append(f"  â€¢ {attr} = {value_str}")
-            else:
-                # For classes, just show attribute name
-                result.append(f"  â€¢ {attr}")
-    
-    result.append("=" * 70)
-    
-    return "\n".join(result)
+    # For "What is X?" - return just entity name (no classification)
+    # Let LLM explain based on its knowledge
+    return entity_name
+
 
 
 

@@ -11,11 +11,11 @@ The user asked: "What is {user_input}?"
 Here is the basic information from the NFR Framework metamodel:
 {context}
 
-Provide a brief, factual response (2-3 sentences) that:
-1. States whether this is a Functional Requirement (FR) or Non-Functional Requirement (NFR) type
-2. Briefly explains what category it belongs to and its general purpose
+Provide a brief, clear explanation (2-3 sentences) of what {user_input} is.
 
-Keep it simple and direct - just classification and brief context. DO NOT mention decomposition or sub-types.
+Explain its purpose in software systems and requirements engineering. 
+Be direct - start immediately with the explanation.
+DO NOT use phrases like "in the context of" or "refers to".
 """,
 
 

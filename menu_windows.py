@@ -807,92 +807,107 @@ class DecompositionWindow(ModuleWindow):
         self.content_layout.addWidget(self.results_label, stretch=1)  # Give stretch priority
     
     def show_decompositions(self):
-        """Show decompositions for the given NFR type"""
+        """Show decompositions for the given NFR type with LLM explanation"""
         text = self.text_input.text().strip()
         if not text:
-            self.results_label.setText("⚠ï¸ Please enter an NFR type first")
+            self.results_label.setText("⚠️ Please enter an NFR type first")
             return
         
-        # Show loading indicator immediately
+        # Show loading
         self.results_label.setText("⏳ Searching for decompositions...")
-        QApplication.processEvents()  # Force UI update
+        QApplication.processEvents()
         
-        # Run in background thread
-        def do_search():
-            try:
-                from nfr_queries import getEntity, getDecompositionsFor, getEntityName
-                
-                # Use fuzzy matching helper
-                matched_name, suggestion = fuzzy_match_entity(text)
-                if not matched_name:
-                    return suggestion  # This is the error message
-                
-                entity = getEntity(matched_name)
-                entity_name = getEntityName(entity)
-                
-                # Get decompositions
-                decomps = getDecompositionsFor(entity)
-                
-                response = suggestion  # Start with suggestion if any
-                
-                if decomps:
-                    formatted_name = format_entity_name(entity_name)
-                    response += f"✅ Decompositions of {formatted_name}:\n\n"
-                    response += f"{formatted_name} has {len(decomps)} decomposition method(s):\n\n"
-                    
-                    for i, decomp in enumerate(decomps, 1):
-                        response += f"{i}. {decomp.name}\n"
-                        if hasattr(decomp, 'offspring'):
-                            # Format offspring names
-                            offspring_names = [format_entity_name(o.__name__) for o in decomp.offspring]
-                            response += f"   Offspring: {', '.join(offspring_names)}\n"
-                        response += "\n"
-                    return response
-                else:
-                    # No decomposition methods - check for isA relationships (subclasses)
-                    formatted_name = format_entity_name(entity_name)
-                    from nfr_queries import getChildren
-                    try:
-                        children = getChildren(entity)
-                        if children:
-                            response += f"✅ {formatted_name} Structure:\n\n"
-                            response += f"â„¹ï¸ {formatted_name} has no decomposition methods, but has {len(children)} subtype(s) via isA relationships:\n\n"
-                            
-                            for j, child in enumerate(children, 1):
-                                child_name = format_entity_name(getEntityName(child))
-                                response += f"{j}. {child_name}\n"
-                                response += "\n"
-                            
-                            response += "\n💡 These are subtypes (isA relationships), not decomposition methods."
-                            return response
-                    except:
-                        pass
-                    
-                    return response + f"â„¹ï¸ {formatted_name} has no decomposition methods or isA relationships defined in the metamodel."
-
-                
-            except ImportError:
-                return "❌ nfr_queries.py not found\n\nMake sure the queries module is in the project directory."
-            except Exception as e:
-                import traceback
-                return f"❌ {str(e)}\n\n{traceback.format_exc()}"
+        try:
+            from nfr_queries import getEntity, getDecompositionsFor, getEntityName, format_entity_name
+            
+            # Fuzzy match
+            matched_name, suggestion = fuzzy_match_entity(text)
+            if not matched_name:
+                self.results_label.setText(suggestion)
+                return
+            
+            entity = getEntity(matched_name)
+            decomps = getDecompositionsFor(entity)
+            
+            if not decomps:
+                self.results_label.setText(f"ℹ️ {format_entity_name(matched_name)} has no decomposition methods defined.")
+                return
+            
+            # Build context for LLM
+            context = f"{format_entity_name(matched_name)} has {len(decomps)} decomposition method(s):\n\n"
+            for i, decomp in enumerate(decomps, 1):
+                context += f"{i}. {decomp.name}\n"
+                if hasattr(decomp, 'offspring'):
+                    offspring_names = [format_entity_name(o.__name__) for o in decomp.offspring]
+                    context += f"   Offspring: {', '.join(offspring_names)}\n"
+                context += "\n"
+            
+            # Use MenuLLM for natural explanation
+            if self.menu_llm:
+                llm_response = self.menu_llm.respond(
+                    action_type="decompose",
+                    user_input=format_entity_name(matched_name),
+                    metamodel_context=context
+                )
+                self.results_label.setText(suggestion + llm_response)
+            else:
+                self.results_label.setText(suggestion + context)
+            
+            # Store current entity for navigation
+            self.current_entity = matched_name
+            
+            # Show navigation button to "How to achieve X?"
+            self.show_navigation_button()
+            
+        except Exception as e:
+            import traceback
+            self.results_label.setText(f"❌ Error: {str(e)}\n\n{traceback.format_exc()}")
+    
+    def show_navigation_button(self):
+        """Show navigation button to next step in pipeline"""
+        # Check if button already exists
+        if not hasattr(self, 'next_step_btn'):
+            self.next_step_btn = QPushButton("🔧 How to achieve [X]? →")
+            self.next_step_btn.setMinimumHeight(50)
+            self.next_step_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #4CAF50;
+                    color: white;
+                    font-size: 13pt;
+                    font-weight: bold;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #45a049;
+                }
+                QPushButton:pressed {
+                    background-color: #3d8b40;
+                }
+            """)
+            self.next_step_btn.setCursor(Qt.PointingHandCursor)
+            self.next_step_btn.clicked.connect(self.go_to_operationalizations)
+            self.content_layout.addWidget(self.next_step_btn)
         
-        def on_complete(result):
-            self.results_label.setText(result)
+        # Update button text
+        if hasattr(self, 'current_entity'):
+            from nfr_queries import format_entity_name
+            self.next_step_btn.setText(f"🔧 How to achieve {format_entity_name(self.current_entity)}? →")
         
-        # Run search in thread
-        import threading
-        def run_and_update():
-            result = do_search()
-            # Update UI from main thread
-            from PySide6.QtCore import QMetaObject, Qt as QtCore_Qt, Q_ARG
-            QMetaObject.invokeMethod(self.results_label, "setText", 
-                                    QtCore_Qt.QueuedConnection, Q_ARG(str, result))
-        
-        thread = threading.Thread(target=run_and_update, daemon=True)
-        thread.start()
-
-
+        self.next_step_btn.setVisible(True)
+    
+    def go_to_operationalizations(self):
+        """Navigate to How to achieve X? window"""
+        if hasattr(self, 'current_entity'):
+            self.hide()
+            self.op_window = OperationalizationDecompositionWindow(
+                "How to achieve X? (Operationalizations)",
+                self.parent_home_screen,
+                initial_entity=self.current_entity
+            )
+            self.op_window.show()
+    
 class AttributionWindow(ModuleWindow):
     """Window for attribution (According to whom?)"""
     

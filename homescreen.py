@@ -34,9 +34,7 @@ from menu_windows import (
     ClaimSoftgoalsWindow,
     SideEffectsWindow,
     WhatsThisWindow,
-    NFRDecompositionWindow,
     OperationalizationDecompositionWindow,
-    ArgumentationDecompositionWindow
 )
 # ============================================================================
 # BACKGROUND LLM LOADER
@@ -359,20 +357,20 @@ class HomeScreen(QMainWindow):
                 "title": "📖 What is (NFR/FR)?",
                 "description": "Look up any NFR or operationalization to start exploring",
                 "callback": self.open_whats_this,
-                "badge": "ðŸš€ START HERE"
+                "badge": "🚀 START HERE"
             },
             {
                 "title": "🌳 What does X mean? (Decomposition)",
                 "description": "Split an NFR into its decompositions to understand its structure",
-                "callback": self.open_decomposition,
-                "submenu_items": [
-                    {"title": "NFR Decompositions", "callback": self.open_nfr_decomposition},
-                    {"title": "Operationalization Decompositions", "callback": self.open_operationalization_decomposition},
-                    {"title": "Argumentation Decompositions", "callback": self.open_argumentation_decomposition}
-                ]
+                "callback": self.open_decomposition
             },
             {
-                "title": "ðŸ“š What is the justification? (Claim)",
+                "title": "🔧 How to achieve X? (Operationalizations)",
+                "description": "Explore design decisions and techniques to satisfy an NFR",
+                "callback": self.open_operationalizations
+            },
+            {
+                "title": "📚 What is the justification? (Claim)",
                 "description": "See who proposed the decomposition approach and why",
                 "callback": self.open_claims
             },
@@ -395,11 +393,6 @@ class HomeScreen(QMainWindow):
                 "title": "📋 Requirement Classification",
                 "description": "Classify requirements into:\n• FR / NFR\n• their specific types",
                 "callback": self.open_classification
-            },
-            {
-                "title": "💬 Chat",
-                "description": "Chat with the agent about requirements",
-                "callback": self.open_chat
             }
         ]
         
@@ -504,33 +497,19 @@ class HomeScreen(QMainWindow):
         self.decomposition_window = DecompositionWindow("What does X mean? (Decomposition)", self)
         self.decomposition_window.show()
     
-    def open_nfr_decomposition(self):
-        """Open NFR Decomposition module - Specific to NFR decompositions"""
-        print("Opening NFR Decomposition...")
-        self.hide()
-        self.nfr_decomposition_window = NFRDecompositionWindow("NFR Decompositions", self)
-        self.nfr_decomposition_window.show()
-    
-    def open_operationalization_decomposition(self):
-        """Open Operationalization Decomposition module - shows decomposition + positive effects"""
-        print("Opening Operationalization Decomposition...")
-        self.hide()
-        self.op_decomposition_window = OperationalizationDecompositionWindow("Operationalization Decompositions", self)
-        self.op_decomposition_window.show()
-    
-    def open_argumentation_decomposition(self):
-        """Open Argumentation Decomposition module"""
-        print("Opening Argumentation Decomposition...")
-        self.hide()
-        self.arg_decomposition_window = ArgumentationDecompositionWindow("Argumentation Decompositions", self)
-        self.arg_decomposition_window.show()
-    
     def open_claims(self):
         """Open Claims/Justification module"""
         print("Opening Claims...")
         self.hide()
         self.claims_window = AttributionWindow("What is the justification? (Claim)", self)
         self.claims_window.show()
+    
+    def open_operationalizations(self):
+        """Open How to achieve X? - shows operationalizations for NFRs"""
+        print("Opening How to achieve X? (Operationalizations)...")
+        self.hide()
+        self.operationalizations_window = OperationalizationDecompositionWindow("How to achieve X? (Operationalizations)", self)
+        self.operationalizations_window.show()
     
     def open_examples(self):
         """Open Examples Browser module"""
@@ -573,60 +552,6 @@ class HomeScreen(QMainWindow):
         self.hide()
         self.classification_window = ClassificationWindow("Requirement Classification", self)
         self.classification_window.show()
-    
-    def open_chat(self):
-        """Open Chat module - preserving full chatbot functionality"""
-        print("Opening Chat...")
-        
-        try:
-            # Method 1: Try direct import first (more reliable)
-            import tkinter as tk
-            from chatbot import ChatbotGUI
-            
-            # Create chatbot window
-            chatbot_root = tk.Tk()
-            chatbot_root.title("NFR Framework Chatbot")
-            
-            # Create chatbot GUI (unmodified)
-            chatbot_app = ChatbotGUI(chatbot_root)
-            
-            # Hide home screen while chatbot is open
-            self.hide()
-            
-            # Handle window close button (X)
-            def on_chatbot_close():
-                chatbot_root.destroy()
-            
-            chatbot_root.protocol("WM_DELETE_WINDOW", on_chatbot_close)
-            
-            # Start chatbot event loop (BLOCKS until chatbot closes)
-            chatbot_root.mainloop()
-            
-            # When chatbot closes, show home screen again
-            self.show()
-            
-        except ImportError as e:
-            print(f"Error: Could not import chatbot: {e}")
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.warning(
-                self,
-                "Chatbot Not Available",
-                f"Could not load chatbot module.\n\n"
-                f"Error: {str(e)}\n\n"
-                "Make sure chatbot.py is in the same directory."
-            )
-            self.show()
-        except Exception as e:
-            print(f"Error opening chatbot: {e}")
-            import traceback
-            traceback.print_exc()
-            from PySide6.QtWidgets import QMessageBox
-            QMessageBox.critical(
-                self,
-                "Error",
-                f"Failed to open chatbot:\n{str(e)}"
-            )
-            self.show()
     
     def open_logo_url(self):
         """Open URL when logo is clicked"""
