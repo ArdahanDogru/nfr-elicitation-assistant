@@ -4044,3 +4044,90 @@ class ArgumentationDecompositionWindow(ModuleWindow):
         
         thread = threading.Thread(target=run_and_update, daemon=True)
         thread.start()
+
+class VerificationWindow(ModuleWindow):
+    """Window for requirement verification"""
+    
+    def setup_content(self):
+        # Initialize MenuLLM for AI-powered responses
+        self.menu_llm = MenuLLM() if MENU_LLM_AVAILABLE else None
+
+        from PySide6.QtWidgets import QLineEdit, QLabel
+        
+        # Instruction label
+        instruction = QLabel("Verify and validate requirements:")
+        instruction.setStyleSheet("font-size: 14pt; font-weight: bold; color: #333; margin-bottom: 10px;")
+        self.content_layout.addWidget(instruction)
+        
+        # Single-line input
+        self.text_input = QLineEdit()
+        self.text_input.setPlaceholderText("Enter requirement to verify...")
+        self.text_input.setMinimumHeight(60)
+        self.text_input.setStyleSheet("""
+            QLineEdit {
+                font-size: 14pt;
+                padding: 15px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                background-color: white;
+            }
+            QLineEdit:focus {
+                border: 2px solid #2196F3;
+            }
+        """)
+        self.content_layout.addWidget(self.text_input)
+        
+        # Verify button
+        verify_btn = QPushButton("🔍 Verify Requirement")
+        verify_btn.setMinimumHeight(50)
+        verify_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #1976D2;
+                color: white;
+                font-size: 14pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 8px;
+                padding: 15px;
+            }
+            QPushButton:hover {
+                background-color: #1565C0;
+            }
+            QPushButton:pressed {
+                background-color: #0D47A1;
+            }
+        """)
+        verify_btn.setCursor(Qt.PointingHandCursor)
+        verify_btn.clicked.connect(self.verify_requirement)
+        self.content_layout.addWidget(verify_btn)
+        
+        # Results area
+        from PySide6.QtWidgets import QTextEdit
+        self.results_label = QTextEdit()
+        self.results_label.setReadOnly(True)
+        self.results_label.setPlaceholderText("Verification results will appear here...")
+        self.results_label.setMinimumHeight(400)
+        self.results_label.setStyleSheet("""
+            QTextEdit {
+                font-size: 14pt;
+                padding: 20px;
+                background-color: white;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                margin-top: 20px;
+            }
+        """)
+        self.results_label.setTextInteractionFlags(
+            Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard
+        )
+        self.content_layout.addWidget(self.results_label, stretch=1)
+    
+    def verify_requirement(self):
+        """Verify the given requirement"""
+        text = self.text_input.text().strip()
+        if not text:
+            self.results_label.setText("⚠️ Please enter a requirement first")
+            return
+        
+        # Placeholder implementation
+        self.results_label.setText(f"🔍 Verifying requirement: {text}\n\n✅ Verification functionality coming soon!")

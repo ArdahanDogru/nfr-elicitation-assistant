@@ -35,6 +35,7 @@ from menu_windows import (
     SideEffectsWindow,
     WhatsThisWindow,
     OperationalizationDecompositionWindow,
+    VerificationWindow,
 )
 # ============================================================================
 # BACKGROUND LLM LOADER
@@ -88,13 +89,14 @@ class BackgroundLLMLoader(QObject):
 class MenuCard(QFrame):
     """A clickable card for each menu item - Icon centered, title below"""
     
-    def __init__(self, title: str, description: str, icon: str = None, submenu_items: list = None, badge: str = None, parent=None):
+    def __init__(self, title: str, description: str, icon: str = None, submenu_items: list = None, badge: str = None, color_scheme: str = None, parent=None):
         super().__init__(parent)
         self.original_title = title
         self.description = description
         self.callback = None
         self.submenu_items = submenu_items or []  # List of dicts: [{"title": "...", "callback": ...}]
         self.badge = badge  # Optional badge text like "START HERE"
+        self.color_scheme = color_scheme  # 'green', 'blue', or None (default white)
         
         # Extract emoji/icon from title if present
         # Emojis are typically at the start, followed by space or newline
@@ -126,21 +128,37 @@ class MenuCard(QFrame):
         self.setMinimumSize(280, min_height)
         self.setMaximumWidth(400)
         
-        # Apply artistic stylesheet - highlight if has badge
-        if self.badge:
+        # Apply artistic stylesheet based on color_scheme
+        if self.color_scheme == 'green':
+            # Green scheme - for Verification (more pronounced border)
             self.setStyleSheet("""
                 MenuCard {
-                    background-color: #E8F5E9;
-                    border: 3px solid #4CAF50;
+                    background-color: #C8E6C9;
+                    border: 5px solid #4CAF50;
                     border-radius: 12px;
                     padding: 10px;
                 }
                 MenuCard:hover {
-                    background-color: #C8E6C9;
-                    border: 3px solid #388E3C;
+                    background-color: #A5D6A7;
+                    border: 5px solid #388E3C;
+                }
+            """)
+        elif self.color_scheme == 'blue':
+            # Blue scheme - for Browse Examples and Classification (more pronounced border)
+            self.setStyleSheet("""
+                MenuCard {
+                    background-color: #BBDEFB;
+                    border: 5px solid #2196F3;
+                    border-radius: 12px;
+                    padding: 10px;
+                }
+                MenuCard:hover {
+                    background-color: #90CAF9;
+                    border: 5px solid #1976D2;
                 }
             """)
         else:
+            # Default white scheme (same for all white cards including badge items)
             self.setStyleSheet("""
                 MenuCard {
                     background-color: white;
@@ -309,7 +327,15 @@ class HomeScreen(QMainWindow):
         self._create_footer(main_layout)
     
     def _create_header(self, parent_layout):
-        """Create header with artistic title and subtitle"""
+        """Create header with artistic title, subtitle, and Help button"""
+        # Outer horizontal layout to position Help button on the right
+        header_outer_layout = QHBoxLayout()
+        header_outer_layout.setContentsMargins(20, 10, 20, 0)
+        
+        # Left spacer for balance
+        header_outer_layout.addStretch(1)
+        
+        # Center vertical layout for title and subtitle
         header_layout = QVBoxLayout()
         header_layout.setSpacing(8)
         
@@ -337,7 +363,42 @@ class HomeScreen(QMainWindow):
         subtitle.setAlignment(Qt.AlignCenter)
         header_layout.addWidget(subtitle)
         
-        parent_layout.addLayout(header_layout)
+        header_outer_layout.addLayout(header_layout)
+        
+        # Right spacer (smaller to make room for Help button)
+        header_outer_layout.addStretch(1)
+        
+        # Help button on the right
+        help_button = QPushButton("❓ Help")
+        help_button.setMinimumSize(100, 40)
+        help_button.setMaximumSize(120, 40)
+        help_button.setStyleSheet("""
+            QPushButton {
+                background-color: #E53935;
+                color: white;
+                font-size: 12pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 6px;
+                padding: 8px 16px;
+            }
+            QPushButton:hover {
+                background-color: #C62828;
+            }
+            QPushButton:pressed {
+                background-color: #B71C1C;
+            }
+        """)
+        help_button.setCursor(Qt.PointingHandCursor)
+        help_button.clicked.connect(self.open_info)
+        
+        # Add button aligned to top right
+        button_container = QVBoxLayout()
+        button_container.addWidget(help_button)
+        button_container.addStretch()
+        header_outer_layout.addLayout(button_container)
+        
+        parent_layout.addLayout(header_outer_layout)
     
     def _create_menu_grid(self, parent_layout):
         """Create grid of menu cards directly on blue background"""
@@ -349,13 +410,8 @@ class HomeScreen(QMainWindow):
         # Define menu items with icons/emoji - 8 items in 4x2 grid
         menu_items = [
             {
-                "title": "❓ What is this (tool) for?",
-                "description": "• What should I ask?\n• How good is the response?",
-                "callback": self.open_info
-            },
-            {
                 "title": "📖 What is X(NFR)?",
-                "description": "Enter an NFR of your choice",
+                "description": "Enter an NFR of your choice.",
                 "callback": self.open_whats_this,
                 "badge": "🚀 START HERE"
             },
@@ -380,6 +436,12 @@ class HomeScreen(QMainWindow):
                 "callback": self.open_claims
             },
             {
+                "title": "🔍 Verification",
+                "description": "Verify and validate requirements against quality criteria",
+                "callback": self.open_verification,
+                "color_scheme": "green"
+            },
+            {
                 "title": "📋 Browse Examples",
                 "description": "Explore entities, relationships, and constraints in the metamodel",
                 "callback": self.open_examples,
@@ -387,12 +449,14 @@ class HomeScreen(QMainWindow):
                     {"title": "NFR Types", "callback": self.open_nfr_types},
                     {"title": "Operationalizing Softgoals", "callback": self.open_op_softgoals},
                     {"title": "Claim Softgoals", "callback": self.open_claim_softgoals}
-                ]
+                ],
+                "color_scheme": "blue"
             },
             {
                 "title": "✅ Requirement Classification",
                 "description": "Classify requirements into:\n• FR / NFR\n• their specific types",
-                "callback": self.open_classification
+                "callback": self.open_classification,
+                "color_scheme": "blue"
             }
         ]
         
@@ -405,7 +469,8 @@ class HomeScreen(QMainWindow):
                 title=item["title"],
                 description=item["description"],
                 submenu_items=item.get("submenu_items", None),
-                badge=item.get("badge", None)
+                badge=item.get("badge", None),
+                color_scheme=item.get("color_scheme", None)
             )
             card.set_callback(item["callback"])
             
@@ -545,6 +610,13 @@ class HomeScreen(QMainWindow):
         self.hide()
         self.side_effects_window = SideEffectsWindow("Possible side effects? (Contributions)", self)
         self.side_effects_window.show()
+    
+    def open_verification(self):
+        """Open Verification module"""
+        print("Opening Verification...")
+        self.hide()
+        self.verification_window = VerificationWindow("Verification", self)
+        self.verification_window.show()
     
     def open_classification(self):
         """Open Requirement Classification module"""
