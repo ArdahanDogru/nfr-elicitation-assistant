@@ -6,10 +6,13 @@ Structured prompts for different menu actions
 
 MENU_PROMPTS = {
     "define_entity": """
-"What is {user_input}?"
+What is {user_input}?
+
+Given this NFR type information:
+{context}
 
 Provide a brief, clear, and concise explanation of what {user_input} is. Try to make it so that even people who have no expert knowledge in the requirements engineering
-field can understand what's going on. Keep it simple and direct, and about the entity itself.
+field can understand what's going on. Keep it simple and direct, and about the entity itself. Provide easy to understand examples if it fits.
 """,
 
 
@@ -21,16 +24,7 @@ Explain {user_input} based on this given this information about its decompositio
 Be concise but cover all information given to you. Do not change or add any offsprings in decomposition methods.
 """,
 
-    "define_nfr": """
-What is {user_input}?
-
-Given this NFR type information:
-{context}
-
-Provide a brief, clear, and concise explanation of what {user_input} is. Try to make it so that even people who have no expert knowledge in the requirements engineering
-field can understand what's going on. Keep it simple and direct, and about the entity itself. Provide easy to understand examples if it fits.
-
-""",
+   
 
     "decompose": """
 Decompose {user_input}
@@ -77,11 +71,9 @@ Metamodel data:
 Provide a helpful response based on this metamodel information. Be clear, practical, and grounded in the provided context.
 """,
 
-    "verify": """You are verifying a statement about the NFR Framework metamodel.
+    "verify": """Verify the following statement:  {user_input}
 
-User's statement: {user_input}
-
-Your task is to check if this statement is TRUE or FALSE based on the metamodel.
+Check whether this statement is true or false based on the metamodel information about.
 
 Instructions:
 1. Parse the statement to understand what is being claimed

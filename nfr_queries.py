@@ -609,10 +609,34 @@ def whatIs(entity_or_name, verbose: bool = True) -> str:
     # Format entity name (remove Type/Softgoal suffix for display)
     display_name = entity_name.replace('Type', '').replace('Softgoal', '')
     
+    # For "What is X?" - return structured information: Name + Type + Metaclass/Parent
+    formatted_name = format_entity_name(entity_name)
     
-    # For "What is X?" - return just entity name (no classification)
-    # Let LLM explain based on its knowledge
-    return entity_name
+    # Get parent/metaclass information
+    parent_info = "Unknown"
+    if inspect.isclass(entity):
+        # Get immediate parent class
+        bases = entity.__bases__
+        if bases:
+            # Get the first meaningful parent (skip 'object')
+            for base in bases:
+                if base.__name__ != 'object':
+                    # Format parent name nicely (separate camelCase words)
+                    parent_name = base.__name__
+                    # Insert spaces before capital letters
+                    import re
+                    parent_formatted = re.sub(r'([A-Z])', r' \1', parent_name).strip()
+                    # Replace common patterns
+                    parent_formatted = parent_formatted.replace(' Type', '').replace(' Softgoal', '').strip()
+                    parent_info = parent_formatted
+                    break
+    
+    # Build structured context
+    context = f"Name: {formatted_name}\n"
+    context += f"Type/Classification: {classification}\n"
+    context += f"Parent Class: {parent_info}\n"
+    
+    return context
 
 
 
