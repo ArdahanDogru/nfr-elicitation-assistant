@@ -26,7 +26,7 @@ class SoftgoalMetaClass(PropositionMetaClass):
     pass
     def __new__(mcs, name, bases, namespace):
         cls = super().__new__(mcs, name, bases, namespace)
-        # Copy parent's attributes (don't share the same set!)
+
         parent_attrs = set()
         if hasattr(cls, '_metaclass_attributes'):
             parent_attrs = cls._metaclass_attributes.copy()
@@ -37,13 +37,10 @@ class SoftgoalMetaClass(PropositionMetaClass):
 
 class NFRSoftgoalMetaClass(SoftgoalMetaClass):
     pass
-    pass
 
 
 class OperationalizingSoftgoalMetaClass(SoftgoalMetaClass):
     pass
-    pass
-
 
 class ClaimSoftgoalMetaClass(SoftgoalMetaClass):
     pass
@@ -56,37 +53,25 @@ class ClaimSoftgoalMetaClass(SoftgoalMetaClass):
 
 class SoftgoalTypeMetaClass(type):
     pass
-    pass
-
 
 class SoftgoalTopicMetaClass(type):
     pass
-    pass
-
 
 class ContributionMetaClass(PropositionMetaClass):
     pass
-    pass
-
 
 class MethodMetaClass(type):
     pass
-    pass
-
 
 class DecompositionMethodMetaClass(MethodMetaClass):
-    pass
     pass
 
 class NFRDecompositionMethodMetaClass(DecompositionMethodMetaClass):
     pass
-    pass
 
 class OperationalizationDecompositionMethodMetaClass(DecompositionMethodMetaClass):
     pass
-    pass
 class ClaimDecompositionMethodMetaClass(DecompositionMethodMetaClass):
-    pass
     pass
 
 
@@ -149,20 +134,18 @@ class Softgoal(Proposition, metaclass=SoftgoalMetaClass):
 
 class NFRSoftgoal(Softgoal, metaclass=NFRSoftgoalMetaClass):
     pass
-    pass
 
 
 class OperationalizingSoftgoal(Softgoal, metaclass=OperationalizingSoftgoalMetaClass):
-    pass
     pass
 
 
 class ClaimSoftgoal(Softgoal, metaclass=ClaimSoftgoalMetaClass):
     pass
-    def __init__(self, argument: str = ""):
+    def __init__(self, argument: str = "",  supports=None):
         # Don't call super().__init__() to avoid getting label, priority
         self.argument = argument
-
+        self.supports = supports
 
 class SoftgoalTopic:
     pass
@@ -180,19 +163,15 @@ class SoftgoalTopic:
 class SoftgoalType(metaclass=SoftgoalTypeMetaClass):
     pass
 
-
 class NFRSoftgoalType(SoftgoalType):
-    pass
     pass
 
 
 class OperationalizingSoftgoalType(SoftgoalType):
     pass
-    pass
 
 
 class ClaimSoftgoalType(SoftgoalType):
-    pass
     pass
 
 
@@ -259,6 +238,23 @@ class PouloseSensorFusionClaimType(ClaimSoftgoalType):
 class NielsenLearnabilityClaimType(ClaimSoftgoalType):
     pass
     topic = "Nielsen Norman Group (2019). How to Measure Learnability of a User Interface - Steep learning curves enable proficiency within approximately 4 trials"
+
+class MolichNielsen1990ACMClaimType(ClaimSoftgoalType):
+    """Original 9 usability heuristics - Journal publication"""
+    pass
+    topic = "Molich, R., and Nielsen, J. (1990). Improving a human-computer dialogue. Communications of the ACM, 33(3), pp. 338-348"
+
+
+class NielsenMolich1990CHIClaimType(ClaimSoftgoalType):
+    """Original 9 usability heuristics - Conference publication"""
+    pass
+    topic = "Nielsen, J., and Molich, R. (1990). Heuristic evaluation of user interfaces. Proc. ACM CHI'90 Conf. (Seattle, WA, 1-5 April), pp. 249-256"
+
+
+class Nielsen1993BookClaimType(ClaimSoftgoalType):
+    """Extended 10 usability heuristics - Book"""
+    pass
+    topic = "Nielsen, J. (1993). Usability Engineering. Academic Press, Boston, MA"
 
 
 # NFR Quality Attribute Types
@@ -475,6 +471,62 @@ class ErrorPreventionType(NFRSoftgoalType):
 
 class SatisfactionType(NFRSoftgoalType):
     pass
+
+class SimpleNaturalDialogueType(NFRSoftgoalType):
+    """Dialogues should not contain information which is irrelevant or rarely needed. 
+    Every extra unit of information in a dialogue competes with the relevant units of 
+    information and diminishes their relative visibility. All information should appear 
+    in a natural and logical order."""
+    pass
+
+class UserLanguageType(NFRSoftgoalType):
+    """The dialogue should be expressed clearly in words, phrases and concepts familiar 
+    to the user, rather than in system-oriented terms."""
+    pass
+
+
+class MinimizeMemoryLoadType(NFRSoftgoalType):
+    """The user should not have to remember information from one part of the dialogue 
+    to another. Instructions for use of the system should be visible or easily 
+    retrievable whenever appropriate."""
+    pass
+
+
+class FeedbackType(NFRSoftgoalType):
+    """The system should always keep users informed about what is going on, through 
+    appropriate feedback within reasonable time."""
+    pass
+
+
+class ClearlyMarkedExitsType(NFRSoftgoalType):
+    """Users often choose system functions by mistake and will need a clearly marked 
+    'emergency exit' to leave the unwanted state without having to go through an 
+    extended dialogue."""
+    pass
+
+
+class ShortcutsType(NFRSoftgoalType):
+    """Accelerators—unseen by the novice user—may often speed up the interaction for 
+    the expert user such that the system can cater to both inexperienced and 
+    experienced users."""
+    pass
+
+
+class GoodErrorMessagesType(NFRSoftgoalType):
+    """Error messages should be expressed in plain language (no codes), precisely 
+    indicate the problem, and constructively suggest a solution."""
+    pass
+
+
+
+
+class HelpDocumentationType(NFRSoftgoalType):
+    """Even though it is better if the system can be used without documentation, it 
+    may be necessary to provide help and documentation. Any such information should 
+    be easy to search, be focused on the user's task, list concrete steps to be 
+    carried out, and not be too large."""
+    pass
+
 
 
 # Operationalizing Technique Types
@@ -878,6 +930,52 @@ class SatisfactionSoftgoal(NFRSoftgoal):
     pass
     type = SatisfactionType
 
+class SimpleNaturalDialogueSoftgoal(NFRSoftgoal):
+    pass
+    type = SimpleNaturalDialogueType
+
+
+class UserLanguageSoftgoal(NFRSoftgoal):
+    pass
+    type = UserLanguageType
+
+
+class MinimizeMemoryLoadSoftgoal(NFRSoftgoal):
+    pass
+    type = MinimizeMemoryLoadType
+
+
+# ConsistencySoftgoal already exists
+
+
+class FeedbackSoftgoal(NFRSoftgoal):
+    pass
+    type = FeedbackType
+
+
+class ClearlyMarkedExitsSoftgoal(NFRSoftgoal):
+    pass
+    type = ClearlyMarkedExitsType
+
+
+class ShortcutsSoftgoal(NFRSoftgoal):
+    pass
+    type = ShortcutsType
+
+
+class GoodErrorMessagesSoftgoal(NFRSoftgoal):
+    pass
+    type = GoodErrorMessagesType
+
+
+# ErrorPreventionSoftgoal already exists
+
+
+class HelpDocumentationSoftgoal(NFRSoftgoal):
+    pass
+    type = HelpDocumentationType
+
+
 
 # Operationalizing Technique Softgoal Classes   
 
@@ -1065,7 +1163,6 @@ class DecompositionMethod(Method, metaclass=DecompositionMethodMetaClass):
 
 class NFRDecompositionMethod(DecompositionMethod, metaclass=NFRDecompositionMethodMetaClass):
     pass
-    pass
 
 class PerformanceDecompositionMethod(NFRDecompositionMethod):
     pass
@@ -1082,14 +1179,12 @@ class UsabilityDecompositionMethod(NFRDecompositionMethod):
 
 class OperationalizationDecompositionMethod(DecompositionMethod, metaclass=OperationalizationDecompositionMethodMetaClass):
     pass
-    pass
 
 class AuthorizationDecompositionMethod(OperationalizationDecompositionMethod):
     pass
     parent = AuthorizationType
 
 class ClaimDecompositionMethod(DecompositionMethod, metaclass=ClaimDecompositionMethodMetaClass):
-    pass
     pass
 
 
@@ -1100,19 +1195,9 @@ class Contribution(Proposition, metaclass=ContributionMetaClass):
         self.source = source_name
         self.target = target_name
         self.type = contribution_type
+    
 
 
-
-# Claim Softgoals (using argument attribute)
-claim_smith = ClaimSoftgoal(argument="According to Smith's User-Centered Performance Metrics")
-claim_tcsec = ClaimSoftgoal(argument="Trusted Computer System Evaluation Criteria (TCSEC/Orange Book, 1985) - Defines security through Confidentiality, Integrity, and Availability")
-claim_windows = ClaimSoftgoal(argument="Microsoft Windows Task Manager - Performance Tab")
-claim_traditional_cs = ClaimSoftgoal(argument="Traditional Computer Science - Time and Space Complexity")
-claim_iso25010 = ClaimSoftgoal(argument="ISO/IEC 25010:2011 Systems and software Quality Requirements and Evaluation (SQuaRE) - Defines usability through five quality sub-characteristics")
-
-# Additional claims for operationalizations
-claim_manduchi_safety = ClaimSoftgoal(argument="Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Advance warnings minimize input to focus on safety")
-claim_manduchi_usability = ClaimSoftgoal(argument="Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Multimodal feedback enables hands-free operation")
 
 # ============================================================================
 # LEVEL 3: GROUND INSTANCES
@@ -1165,35 +1250,82 @@ UsabilityDecomp_ISO25010 = UsabilityDecompositionMethod(
     offspring=[LearnabilityType, EfficiencyType, MemorabilityType, ErrorPreventionType, SatisfactionType]
 )
 
+UsabilityDecomp_Nielsen = UsabilityDecompositionMethod(
+    name = "Molich & Nielsen's Original 9 Usability Heuristics (1990)",
+    parent = UsabilityType,
+    offspring = [
+        SimpleNaturalDialogueType,    # H1: Simple and natural dialogue
+        UserLanguageType,              # H2: Speak the user's language
+        MinimizeMemoryLoadType,        # H3: Minimize the users' memory load
+        ConsistencyType,               # H4: Consistency
+        FeedbackType,                  # H5: Feedback
+        ClearlyMarkedExitsType,        # H6: Clearly marked exits
+        ShortcutsType,                 # H7: Shortcuts
+        GoodErrorMessagesType,         # H8: Good error messages
+        ErrorPreventionType            # H9: Prevent errors
+    ]
+)
 
+UsabilityDecomp_NielsenAndMolich = UsabilityDecompositionMethod(
+
+    name = "Nielsen's Extended 10 Usability Heuristics (1993)",
+    parent = UsabilityType,
+    offspring = [
+        SimpleNaturalDialogueType,    # H1: Simple and natural dialogue
+        UserLanguageType,              # H2: Speak the user's language
+        MinimizeMemoryLoadType,        # H3: Minimize the users' memory load
+        ConsistencyType,               # H4: Consistency
+        FeedbackType,                  # H5: Feedback
+        ClearlyMarkedExitsType,        # H6: Clearly marked exits
+        ShortcutsType,                 # H7: Shortcuts
+        GoodErrorMessagesType,         # H8: Good error messages
+        ErrorPreventionType,           # H9: Prevent errors
+        HelpDocumentationType          # H10: Help and documentation (NEW in 1993)
+    ]
+)
 
 # ----------------------------------------------------------------------------
 # ClaimSoftgoal Instances (Attribution & Argumentation)
 # ----------------------------------------------------------------------------
 
-# Claim about PerformanceDecomp1 (Traditional CS)
+# Claim Softgoals (using argument attribute)
+claim_traditional_cs = ClaimSoftgoal(
+    argument="Traditional Computer Science - Time and Space Complexity",
+    supports= PerformanceDecomp1)
 
-# Claim about PerformanceDecomp2 (Smith's approach)
+claim_smith = ClaimSoftgoal(
+    argument="According to Smith's User-Centered Performance Metrics",
+    supports = PerformanceDecomp2)
 
-# Claim about SecurityDecomp1 (CIA Triad)
+claim_windows = ClaimSoftgoal(
+    argument="Microsoft Windows Task Manager - Performance Tab",
+    supports= PerformanceDecomp3)
 
-# Claim about PerformanceDecomp3 (Windows Task Manager)
+claim_tcsec = ClaimSoftgoal(
+    argument="Trusted Computer System Evaluation Criteria (TCSEC/Orange Book, 1985) - Defines security through Confidentiality, Integrity, and Availability",
+    supports = SecurityDecomp1)
 
-# Claim about Encryption Types
 
-# Claim about UsabilityDecomp_ISO25010
+claim_iso25010 = ClaimSoftgoal(
+    argument="ISO/IEC 25010:2011 Systems and software Quality Requirements and Evaluation (SQuaRE) - Defines usability through five quality sub-characteristics",
+    supports= UsabilityDecomp_ISO25010)
 
-# Claim about Personalized Interfaces operationalizing Usability
+claim_nielsen_molich_1990 = ClaimSoftgoal(
+    argument= "Molich, R., and Nielsen, J. (1990). Improving a human-computer dialogue. Communications of the ACM, 33(3), pp. 338-348",
+    supports=UsabilityDecomp_NielsenAndMolich)
 
-# Claim about Concise Audio operationalizing Usability
+claim_nielsen_1993 = ClaimSoftgoal(
+    argument= "Nielsen, J. (1993). Usability Engineering. Academic Press, Boston, MA",
+    supports=UsabilityDecomp_Nielsen)
 
-# Claim about Non-Speech Sounds operationalizing Usability
+# Additional claims for operationalizations
+claim_manduchi_safety = ClaimSoftgoal(
+    argument="Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Advance warnings minimize input to focus on safety",
+    supports= NotifyType)
 
-# Claim about Sub-Meter Positioning operationalizing Safety
-
-# Claim about Sensor Fusion operationalizing Accuracy
-
-# Claim about Rapid Task Mastery operationalizing Learnability
+claim_manduchi_usability = ClaimSoftgoal(
+    argument="Manduchi et al. (2024). Smartphone apps for indoor wayfinding for blind users - Multimodal feedback enables hands-free operation",
+    supports=DisplayType)
 
 
 # ----------------------------------------------------------------------------
