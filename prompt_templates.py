@@ -27,13 +27,8 @@ Be concise but cover all information given to you. Do not change or add any offs
    
 
     "decompose": """
-Decompose {user_input}
-
-given the decomposition information:
-{context}
-
-Try to explain the logic for each decomposition in a clear and concise way, give examples where possible.
-""",
+A softgoal can be decomposed into sub-softgoals. A decomposition helps define a softgoal, since it provides the components that makes up of the main softgoal.
+Decompose the (nonfunctional requirement/operationalization) {user_input} softgoal given the decomposition information:{context}""",
 
     
     "show_examples": """
@@ -45,11 +40,9 @@ Provide a concise explanation covering all the information given but not in a wa
 """,
 
     "show_operationalizations": """
-Explain operationalizations (alternative design techniques) for achieving/satisficing the {user_input} NFR, given the information:
+Operationalizations, or operationalizing softgoals are possible design alternatives for meeting or satisficing non-functional requirements in the system. 
+Demonstrate and explain the operationalizations for the {user_input} softgoal given the information: {context}.
 
-{context}
-
-Explain the available techniques given, including how they work, how they help achieving/satisficing the {user_input}. Provide practical examples, and add a small part about the trade-offs/considerations for using each operationalization provided. 
 """,
 
 
@@ -58,8 +51,9 @@ Analyze and explain the following contribution relationships for {user_input}:
 
 {context}
 
-Explain each trade-off, what techniques or operationalizations help or hurt which NFRs, what are the contribution types/side effects? Provide an example where you can.
-Help me understand the implications for using each technique.
+Every operationalization, or function in the system can simultaneously have negative and positive effects on different non-functional requirements. 
+Therefore, using one operationalization can help satisfice one NFR while hindering another. Explain each NFR the {user_input} operationalization affects, whether negatively or positively; analyze the {user_input}'s trade-offs.
+Provide examples where you can and help understand the implications for using each technique.
 """,
 
     "default": """
