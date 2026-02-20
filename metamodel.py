@@ -1368,6 +1368,7 @@ CachingToTimePerformance = Contribution("Caching", "TimePerformance", Contributi
 EncryptionToTimePerformance = Contribution("Encryption", "TimePerformance", ContributionType.HURT)
 CompressionToPerformance = Contribution("Compression", "TimePerformance", ContributionType.HELP)
 NetworkMonitoringToTimePerformance = Contribution("NetworkMonitoring", "TimePerformance", ContributionType.HURT) # Packet inspection overhead
+AuthenticationToTimePerformance = Contribution("Authentication", "TimePerformance", ContributionType.HURT) 
 
 #ops for spacePerf
 IndexingToSpacePerformance = Contribution("Indexing", "SpacePerformance", ContributionType.HELP)
@@ -1415,6 +1416,7 @@ MultimodalFeedbackToUsability = Contribution("MultimodalFeedback", "Usability", 
 PersonalizedInterfacesToUsability = Contribution("PersonalizedInterfaces", "Usability", ContributionType.HELP)
 ConciseAudioInstructionsToUsability = Contribution("ConciseAudioInstructions", "Usability", ContributionType.HELP)
 NonSpeechAudioCuesToUsability = Contribution("NonSpeechAudioCues", "Usability", ContributionType.HELP)
+AuthenticationToUsability = Contribution("Authentication", "Usability", ContributionType.HURT) 
 
 #ops for safety
 SubMeterPositioningToSafety = Contribution("SubMeterPositioning", "Safety", ContributionType.HELP)

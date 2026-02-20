@@ -27,8 +27,8 @@ Be concise but cover all information given to you. Do not change or add any offs
    
 
     "decompose": """
-A softgoal can be decomposed into sub-softgoals. A decomposition helps define a softgoal, since it provides the components that makes up of the main softgoal.
-Decompose the (nonfunctional requirement/operationalization) {user_input} softgoal given the decomposition information:{context}""",
+An NFR softgoal can be decomposed into sub-softgoals. A decomposition helps define a softgoal, since it provides the components that makes up of the main softgoal.
+Decompose the {user_input} NFR softgoal given the decomposition information:{context}""",
 
     
     "show_examples": """
@@ -40,20 +40,20 @@ Provide a concise explanation covering all the information given but not in a wa
 """,
 
     "show_operationalizations": """
-Operationalizations, or operationalizing softgoals are possible design alternatives for meeting or satisficing non-functional requirements in the system. 
-Demonstrate and explain the operationalizations for the {user_input} softgoal given the information: {context}.
+Operationalizations are possible design alternatives for meeting or satisficing non-functional requirements in the system. Here is the operationalization information from the metamodel: {context}.
+List and explain all operationalizations for the {user_input} softgoal.
 
 """,
 
 
     "analyze_contributions": """
-Analyze and explain the following contribution relationships for {user_input}:
 
-{context}
 
-Every operationalization, or function in the system can simultaneously have negative and positive effects on different non-functional requirements. 
-Therefore, using one operationalization can help satisfice one NFR while hindering another. Explain each NFR the {user_input} operationalization affects, whether negatively or positively; analyze the {user_input}'s trade-offs.
-Provide examples where you can and help understand the implications for using each technique.
+
+Every operationalization in the system can simultaneously have negative and positive effects on different non-functional requirements. 
+Therefore, using one operationalization can help satisfice one NFR while hindering another. Here's the information about the {user_input} operationalization and their contribution for NFRs in the metamodel: {context} 
+List each NFR the {user_input} operationalization affects, whether negatively or positively; analyze and list {user_input}'s trade-offs between NFRs.
+
 """,
 
     "default": """
