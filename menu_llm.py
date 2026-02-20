@@ -37,6 +37,7 @@ class MenuLLM:
         "analyze_contributions": 700,      # Side effects analysis (increased)
         
         # LONG responses (350-400 tokens)
+        "verify": 500,                     # Statement verification - detailed analysis
         "decompose": 600,                  # Decomposition - multiple children
         "show_sources": 400,               # Justifications - academic detail
         "show_operationalizations": 400,   # Operationalizations - multiple techniques
@@ -149,20 +150,36 @@ class MenuLLM:
             # Get token limit for this action type
             num_predict = self.TOKEN_LIMITS.get(action_type, self.TOKEN_LIMITS["default"])
             
-            response = ollama.chat(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": self.system_prompt},
-                    {"role": "user", "content": prompt}
-                ],
-                options={
-                    "temperature": 0.3,      # Lower = faster, more deterministic
-                    "top_p": 0.8,            # Slightly lower for speed
-                    "num_predict": num_predict,  # Dynamic based on action type!
-                    "num_ctx": 2048,         # Limit context window for speed
-                }
-            )
-            return response['message']['content']
+            # Try ollama.chat() first (newer API)
+            try:
+                response = ollama.chat(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": self.system_prompt},
+                        {"role": "user", "content": prompt}
+                    ],
+                    options={
+                        "temperature": 0.3,      # Lower = faster, more deterministic
+                        "top_p": 0.8,            # Slightly lower for speed
+                        "num_predict": num_predict,  # Dynamic based on action type!
+                        "num_ctx": 2048,         # Limit context window for speed
+                    }
+                )
+                return response['message']['content']
+            except AttributeError:
+                # Fallback to ollama.generate() for older API versions
+                full_prompt = f"System: {self.system_prompt}\n\nUser: {prompt}"
+                response = ollama.generate(
+                    model=self.model,
+                    prompt=full_prompt,
+                    options={
+                        "temperature": 0.3,
+                        "top_p": 0.8,
+                        "num_predict": num_predict,
+                        "num_ctx": 2048,
+                    }
+                )
+                return response['response']
             
         except Exception as e:
             raise Exception(f"Ollama API call failed: {str(e)}")

@@ -36,6 +36,7 @@ from menu_windows import (
     WhatsThisWindow,
     OperationalizationDecompositionWindow,
     VerificationWindow,
+    ChatWindow,
 )
 # ============================================================================
 # BACKGROUND LLM LOADER
@@ -127,6 +128,9 @@ class MenuCard(QFrame):
         min_height = 250 if self.submenu_items else 190
         self.setMinimumSize(280, min_height)
         self.setMaximumWidth(400)
+        
+        # Set minimum size to prevent overlap during resize
+        self.setMinimumSize(250, 180)  # Width, Height
         
         # Apply artistic stylesheet based on color_scheme
         if self.color_scheme == 'green':
@@ -281,6 +285,7 @@ class MenuCard(QFrame):
         layout.addStretch(1)
         self.setLayout(layout)
     
+
     def set_callback(self, callback):
         """Set function to call when card is clicked"""
         self.callback = callback
@@ -298,7 +303,7 @@ class HomeScreen(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("NFR Elicitation AI Assistant")
-        self.setMinimumSize(1400, 900)  # Larger window - about 2/3 screen
+        self.setMinimumSize(1600, 900)  # Larger window for 5+4 grid layout
         
         # Start background LLM loading
         self.llm_loader = BackgroundLLMLoader()
@@ -404,7 +409,7 @@ class HomeScreen(QMainWindow):
         """Create grid of menu cards directly on blue background"""
         # Grid layout directly without container frame
         grid_layout = QGridLayout()
-        grid_layout.setSpacing(20)  # Space between cards
+        grid_layout.setSpacing(25)  # Space between cards (increased for 5+4 layout)
         grid_layout.setContentsMargins(0, 0, 0, 0)  # No extra margins
         
         # Define menu items with icons/emoji - 8 items in 4x2 grid
@@ -457,13 +462,24 @@ class HomeScreen(QMainWindow):
                 "description": "Classify requirements into:\n• FR / NFR\n• their specific types",
                 "callback": self.open_classification,
                 "color_scheme": "blue"
+            },
+            {
+                "title": "💬 Chat",
+                "description": "Free-form conversation about the NFR Framework",
+                "callback": self.open_chat
             }
         ]
         
-        # Create cards in 4x2 grid
+        # Create cards in 5+4 grid (5 on top row, 4 on bottom row)
         for i, item in enumerate(menu_items):
-            row = i // 4
-            col = i % 4
+            # First 5 items go on row 0
+            if i < 5:
+                row = 0
+                col = i
+            # Next 4 items go on row 1
+            else:
+                row = 1
+                col = i - 5
             
             card = MenuCard(
                 title=item["title"],
@@ -476,8 +492,8 @@ class HomeScreen(QMainWindow):
             
             grid_layout.addWidget(card, row, col)
         
-        # Set column stretch to distribute space evenly (4 columns)
-        for col in range(4):
+        # Set column stretch to distribute space evenly (5 columns to accommodate top row)
+        for col in range(5):
             grid_layout.setColumnStretch(col, 1)
         
         # Set row stretch
@@ -624,6 +640,13 @@ class HomeScreen(QMainWindow):
         self.hide()
         self.classification_window = ClassificationWindow("Requirement Classification", self)
         self.classification_window.show()
+    
+    def open_chat(self):
+        """Open Chat window"""
+        print("Opening Chat...")
+        self.hide()
+        self.chat_window = ChatWindow("Chat - NFR Framework Assistant", self)
+        self.chat_window.show()
     
     def open_logo_url(self):
         """Open URL when logo is clicked"""

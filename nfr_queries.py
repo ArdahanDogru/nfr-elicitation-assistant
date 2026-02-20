@@ -621,13 +621,30 @@ def whatIs(entity_or_name, verbose: bool = True) -> str:
             # Get the first meaningful parent (skip 'object')
             for base in bases:
                 if base.__name__ != 'object':
-                    # Format parent name nicely (separate camelCase words)
                     parent_name = base.__name__
-                    # Insert spaces before capital letters
+                    
+                    # Format parent name nicely
                     import re
-                    parent_formatted = re.sub(r'([A-Z])', r' \1', parent_name).strip()
-                    # Replace common patterns
-                    parent_formatted = parent_formatted.replace(' Type', '').replace(' Softgoal', '').strip()
+                    
+                    # Special handling for acronyms at the start (NFR, FR, etc.)
+                    if parent_name.startswith('NFR'):
+                        # Keep NFR together, then process the rest
+                        rest = parent_name[3:]  # Everything after "NFR"
+                        formatted_rest = re.sub(r'([A-Z])', r' \1', rest).strip()
+                        parent_formatted = 'NFR' + (' ' + formatted_rest if formatted_rest else '')
+                    elif parent_name.startswith('FR'):
+                        # Keep FR together, then process the rest
+                        rest = parent_name[2:]  # Everything after "FR"
+                        formatted_rest = re.sub(r'([A-Z])', r' \1', rest).strip()
+                        parent_formatted = 'FR' + (' ' + formatted_rest if formatted_rest else '')
+                    else:
+                        # Standard camelCase splitting
+                        parent_formatted = re.sub(r'([A-Z])', r' \1', parent_name).strip()
+                    
+                    # Remove only 'Type' suffix (keep 'Softgoal' as a meaningful word)
+                    if parent_formatted.endswith(' Type'):
+                        parent_formatted = parent_formatted[:-5].strip()
+                    
                     parent_info = parent_formatted
                     break
     
@@ -900,6 +917,84 @@ def getEntityInfo(entity) -> Dict[str, Any]:
             pass
     
     return info
+
+def getClaimsFor(element):
+    """
+    Universal query function for claims - works for ANY element type.
+    
+    Finds all ClaimSoftgoal instances that support a given element through
+    direct object reference matching.
+    
+    Args:
+        element: Any metamodel element:
+                 - Decomposition instances (e.g., UsabilityDecomp_Nielsen)
+                 - Type classes (e.g., NotifyType, DisplayType)
+                 - Contribution instances (future)
+                 - Any other element
+        
+    Returns:
+        List of ClaimSoftgoal instances that support this element
+        
+    Example:
+        >>> claims = getClaimsFor(UsabilityDecomp_Nielsen)
+        >>> for claim in claims:
+        ...     print(claim.argument)
+        
+        >>> claims = getClaimsFor(NotifyType)
+        >>> for claim in claims:
+        ...     print(claim.argument)
+    """
+    import inspect
+    
+    claims = []
+    
+    # Find all ClaimSoftgoal instances in metamodel
+    for name, obj in inspect.getmembers(metamodel):
+        if isinstance(obj, metamodel.ClaimSoftgoal):
+            # Check if this claim supports the element (direct object identity)
+            if getattr(obj, 'supports', None) is element:
+                claims.append(obj)
+    
+    return claims
+
+
+def getAllClaimsForType(nfr_type):
+    """
+    Convenience function to get ALL claims for all decompositions of an NFR type.
+    
+    This is a shortcut for:
+        decomps = getDecompositionsFor(nfr_type)
+        all_claims = []
+        for decomp in decomps:
+            all_claims.extend(getClaimsFor(decomp))
+    
+    Args:
+        nfr_type: An NFR type class (e.g., UsabilityType, PerformanceType)
+        
+    Returns:
+        List of all ClaimSoftgoal instances for all decompositions of this type
+        
+    Example:
+        >>> claims = getAllClaimsForType(UsabilityType)
+        >>> # Returns claims for ISO25010, Nielsen 1990, Nielsen 1993 decompositions
+    """
+    all_claims = []
+    
+    # Get all decompositions for this type
+    decomps = getDecompositionsFor(nfr_type)
+    
+    # Get claims for each decomposition
+    for decomp in decomps:
+        claims = getClaimsFor(decomp)
+        all_claims.extend(claims)
+    
+    return all_claims
+
+
+
+
+
+
 
 
 # ============================================================================

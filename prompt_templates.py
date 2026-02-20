@@ -65,37 +65,5 @@ Metamodel data:
 Provide a helpful response based on this metamodel information. Be clear, practical, and grounded in the provided context.
 """,
 
-    "verify": """Verify the following statement:  {user_input}
-
-Check whether this statement is true or false based on the metamodel information about.
-
-Instructions:
-1. Parse the statement to understand what is being claimed
-2. Identify the entities and relationships mentioned
-3. Query the metamodel to check if the claim is accurate
-4. Respond with a clear verdict
-
-Response format:
-
-[✓ VERIFIED] or [✗ NOT VERIFIED]
-
-Statement: [restate the user's claim]
-
-Analysis:
-[Explain how you interpreted the statement and what you checked in the metamodel]
-
-Metamodel Evidence:
-[Show what you found - actual entity names, relationships, offspring, etc.]
-
-Verdict:
-[Clear explanation of whether the statement is correct or incorrect, and why]
-
-Be precise. Use actual metamodel entity names. If the statement is partially correct, explain what's right and what's wrong.
-
-Statement types you can verify:
-- "X is an NFR" - Check if X exists as an NFR type
-- "X is an operationalization" - Check if X is an operationalization
-- "X is decomposed into Y and Z" - Check if X has decomposition with Y and Z as offspring
-- "X contributes to Y" - Check contribution relationships
-"""
+    
 }

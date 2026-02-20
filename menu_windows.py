@@ -19,6 +19,7 @@ from utils import (
     get_nfr_and_children,
     fuzzy_match_entity
 )
+from nfr_queries import getClaimsFor
 
 # Import MenuLLM for GenAI-powered responses
 try:
@@ -1075,42 +1076,10 @@ class AttributionWindow(ModuleWindow):
                                     })
                     
                     # Match claims to decompositions by content (what they decompose into)
-                    def find_matching_claim(decomp, all_claims):
-                        """Find the claim that best matches this decomposition"""
-                        if not hasattr(decomp, 'offspring') or not decomp.offspring:
-                            return None
-                        
-                        # Get offspring names for this decomposition
-                        offspring_names = [o.__name__.lower() for o in decomp.offspring]
-                        
-                        # Try to match based on offspring or keywords in claim argument
-                        best_match = None
-                        for claim in all_claims:
-                            argument = claim.get('argument', '').lower()
-                            
-                            # Match by keywords in argument vs offspring
-                            if 'cpu' in argument or 'windows' in argument or 'task manager' in argument:
-                                # Check for Windows-specific offspring
-                                if any('cpu' in name or 'memory' in name or 'disk' in name or 'network' in name or 'gpu' in name for name in offspring_names):
-                                    best_match = claim
-                                    break
-                            elif 'smith' in argument or 'user-centered' in argument:
-                                # Check for Smith's approach (includes Responsiveness)
-                                if any('responsiveness' in name for name in offspring_names):
-                                    best_match = claim
-                                    break
-                            elif 'traditional' in argument or 'time and space' in argument:
-                                # Check for traditional CS (Time + Space only)
-                                if ('time' in ' '.join(offspring_names) and 'space' in ' '.join(offspring_names) and 
-                                    'responsiveness' not in ' '.join(offspring_names)):
-                                    best_match = claim
-                                    break
-                        
-                        return best_match
                     
                     for i, decomp in enumerate(decomps, 1):
-                        # Find the claim that matches this decomposition's content
-                        claim = find_matching_claim(decomp, all_claims_for_type)
+                        # Get claims using universal query function
+                        claims = getClaimsFor(decomp)
                         
                         # Format offspring names
                         offspring_names = []
@@ -1121,10 +1090,10 @@ class AttributionWindow(ModuleWindow):
                         
                         # Display decomposition with its claim
                         source_description = "Not specified"
-                        if claim and claim.get('argument'):
-                            source_description = claim['argument']
+                        if claims:
+                            source_description = claims[0].argument
                         
-                        response += f"ðŸ“š {source_description}\n"
+                        response += f"📚 {source_description}\n"
                         response += "-" * 50 + "\n\n"
                         
                         # Description (how it's decomposed)
@@ -4045,44 +4014,52 @@ class ArgumentationDecompositionWindow(ModuleWindow):
         thread = threading.Thread(target=run_and_update, daemon=True)
         thread.start()
 
+
+
 class VerificationWindow(ModuleWindow):
-    """Window for requirement verification"""
+    """Window for verifying natural language statements against the metamodel"""
     
     def setup_content(self):
-        # Initialize MenuLLM for AI-powered responses
+        # Initialize MenuLLM for AI-powered parsing
         self.menu_llm = MenuLLM() if MENU_LLM_AVAILABLE else None
 
-        from PySide6.QtWidgets import QLineEdit, QLabel
+        from PySide6.QtWidgets import QLineEdit, QLabel, QTextEdit
         
         # Instruction label
-        instruction = QLabel("Verify and validate requirements:")
+        instruction = QLabel("Enter a statement to verify against the NFR Framework:")
         instruction.setStyleSheet("font-size: 14pt; font-weight: bold; color: #333; margin-bottom: 10px;")
         self.content_layout.addWidget(instruction)
         
-        # Single-line input
-        self.text_input = QLineEdit()
-        self.text_input.setPlaceholderText("Enter requirement to verify...")
-        self.text_input.setMinimumHeight(60)
+        # Examples label
+        examples = QLabel("Examples:\n  • Performance is an NFR\n  • Performance is decomposed into Time and Space\n  • Caching is an operationalization for Performance")
+        examples.setStyleSheet("font-size: 11pt; color: #666; margin-bottom: 10px;")
+        self.content_layout.addWidget(examples)
+        
+        # Text input - larger for natural language
+        self.text_input = QTextEdit()
+        self.text_input.setPlaceholderText("Example: Performance is decomposed into Time Performance and Space Performance")
+        self.text_input.setMinimumHeight(100)
+        self.text_input.setMaximumHeight(120)
         self.text_input.setStyleSheet("""
-            QLineEdit {
-                font-size: 14pt;
+            QTextEdit {
+                font-size: 13pt;
                 padding: 15px;
                 border: 2px solid #ddd;
                 border-radius: 8px;
                 background-color: white;
             }
-            QLineEdit:focus {
+            QTextEdit:focus {
                 border: 2px solid #2196F3;
             }
         """)
         self.content_layout.addWidget(self.text_input)
         
         # Verify button
-        verify_btn = QPushButton("🔍 Verify Requirement")
+        verify_btn = QPushButton("🔍 Verify Statement")
         verify_btn.setMinimumHeight(50)
         verify_btn.setStyleSheet("""
             QPushButton {
-                background-color: #1976D2;
+                background-color: #4CAF50;
                 color: white;
                 font-size: 14pt;
                 font-weight: bold;
@@ -4091,25 +4068,24 @@ class VerificationWindow(ModuleWindow):
                 padding: 15px;
             }
             QPushButton:hover {
-                background-color: #1565C0;
+                background-color: #388E3C;
             }
             QPushButton:pressed {
-                background-color: #0D47A1;
+                background-color: #2E7D32;
             }
         """)
         verify_btn.setCursor(Qt.PointingHandCursor)
-        verify_btn.clicked.connect(self.verify_requirement)
+        verify_btn.clicked.connect(self.verify_statement)
         self.content_layout.addWidget(verify_btn)
         
         # Results area
-        from PySide6.QtWidgets import QTextEdit
         self.results_label = QTextEdit()
         self.results_label.setReadOnly(True)
-        self.results_label.setPlaceholderText("Verification results will appear here...")
+        self.results_label.setPlaceholderText("Verification results will appear here...\n\nYou can verify statements like:\n  • Classification: 'X is an NFR/FR/Operationalization'\n  • Decomposition: 'X is decomposed into Y and Z'\n  • Relationships: 'X contributes to Y'")
         self.results_label.setMinimumHeight(400)
         self.results_label.setStyleSheet("""
             QTextEdit {
-                font-size: 14pt;
+                font-size: 13pt;
                 padding: 20px;
                 background-color: white;
                 border: 2px solid #ddd;
@@ -4122,12 +4098,282 @@ class VerificationWindow(ModuleWindow):
         )
         self.content_layout.addWidget(self.results_label, stretch=1)
     
-    def verify_requirement(self):
-        """Verify the given requirement"""
-        text = self.text_input.text().strip()
+    def _build_metamodel_context(self, statement):
+        """Build metamodel context to help LLM verify the statement"""
+        from nfr_queries import (
+            getAllNFRTypes, getAllOperationalizingTypes,
+            getEntity, getDecompositionsFor, getEntityName, format_entity_name
+        )
+        from metamodel import NFRSoftgoalType, OperationalizingSoftgoalType
+        
+        context = "METAMODEL INFORMATION FOR VERIFICATION:\n\n"
+        
+        # Extract potential entity names (simple word extraction)
+        words = statement.replace(',', ' ').replace('.', ' ').split()
+        # Common words to ignore
+        ignore_words = {'is', 'an', 'are', 'the', 'a', 'into', 'and', 'or', 'to', 'for', 
+                       'of', 'in', 'on', 'with', 'by', 'from', 'as', 'at', 'nfr', 'fr',
+                       'decomposed', 'operationalization', 'contributes', 'affects'}
+        
+        # Get potential entity names (capitalized words or longer words)
+        potential_entities = [w for w in words if len(w) > 3 and w.lower() not in ignore_words]
+        
+        # Try to find matching entities in metamodel
+        found_entities = []
+        for potential_name in potential_entities:
+            try:
+                # Try fuzzy matching
+                matched_name, _ = fuzzy_match_entity(potential_name)
+                if matched_name:
+                    entity = getEntity(matched_name)
+                    found_entities.append((matched_name, entity))
+            except:
+                pass
+        
+        # Add information about found entities
+        for entity_name, entity in found_entities:
+            context += f"\n--- {format_entity_name(entity_name)} ---\n"
+            
+            # Check type
+            if isinstance(entity, type) and issubclass(entity, NFRSoftgoalType):
+                context += "Type: NFR Type\n"
+            elif isinstance(entity, type) and issubclass(entity, OperationalizingSoftgoalType):
+                context += "Type: Operationalizing Softgoal (Operationalization)\n"
+            
+            # Get decompositions
+            try:
+                decomps = getDecompositionsFor(entity)
+                if decomps:
+                    context += "Decomposition Methods:\n"
+                    for decomp in decomps:
+                        context += f"  - {decomp.name}\n"
+                        if hasattr(decomp, 'offspring'):
+                            offspring_names = [format_entity_name(o.__name__) for o in decomp.offspring]
+                            context += f"    Offspring: {', '.join(offspring_names)}\n"
+            except:
+                pass
+        
+        # Add summary of all NFR types
+        context += "\n--- ALL NFR TYPES IN METAMODEL ---\n"
+        try:
+            all_nfrs = getAllNFRTypes()  # Returns list of string names
+            context += ", ".join(all_nfrs[:20])  # First 20
+            if len(all_nfrs) > 20:
+                context += f", ... ({len(all_nfrs)} total)"
+            context += "\n"
+        except:
+            pass
+        
+        # Add summary of operationalizations
+        context += "\n--- ALL OPERATIONALIZATIONS IN METAMODEL ---\n"
+        try:
+            all_ops = getAllOperationalizingTypes()
+            op_names = [format_entity_name(op) for op in all_ops]
+            context += ", ".join(op_names[:15])  # First 15
+            if len(op_names) > 15:
+                context += f", ... ({len(op_names)} total)"
+            context += "\n"
+        except:
+            pass
+        
+        return context
+    
+    def verify_statement(self):
+        """Verify the natural language statement against the metamodel"""
+        text = self.text_input.toPlainText().strip()
         if not text:
-            self.results_label.setText("⚠️ Please enter a requirement first")
+            self.results_label.setText("⚠️ Please enter a statement to verify")
             return
         
-        # Placeholder implementation
-        self.results_label.setText(f"🔍 Verifying requirement: {text}\n\n✅ Verification functionality coming soon!")
+        # Show loading
+        self.results_label.setText("⏳ Analyzing your statement against the metamodel...")
+        QApplication.processEvents()
+        
+        try:
+            # Build metamodel context
+            context = self._build_metamodel_context(text)
+            
+            # Use LLM to verify the statement
+            if self.menu_llm:
+                result = self.menu_llm.respond(
+                    action_type="verify",
+                    user_input=text,
+                    metamodel_context=context
+                )
+                self.results_label.setText(result)
+            else:
+                self.results_label.setText("❌ LLM not available. Cannot parse natural language statements.\n\nPlease ensure Ollama is running and a model is available.")
+                
+        except Exception as e:
+            import traceback
+            self.results_label.setText(f"❌ Error during verification:\n\n{str(e)}\n\n{traceback.format_exc()}")
+
+
+
+class ChatWindow(ModuleWindow):
+    """Free-form chat window for asking questions about the NFR Framework"""
+    
+    def setup_content(self):
+        # Initialize MenuLLM
+        self.menu_llm = MenuLLM() if MENU_LLM_AVAILABLE else None
+        self.chat_history = []  # Store conversation history
+
+        from PySide6.QtWidgets import QTextEdit, QLabel, QVBoxLayout, QPushButton, QHBoxLayout
+        
+        # Instruction label
+        instruction = QLabel("Ask any question about the NFR Framework:")
+        instruction.setStyleSheet("font-size: 14pt; font-weight: bold; color: #333; margin-bottom: 10px;")
+        self.content_layout.addWidget(instruction)
+        
+        # Chat display area - shows conversation history
+        self.chat_display = QTextEdit()
+        self.chat_display.setReadOnly(True)
+        self.chat_display.setPlaceholderText("Your conversation will appear here...\n\nAsk questions like:\n  • What NFR types are in the framework?\n  • How does Performance relate to Time and Space?\n  • What operationalizations help with Security?")
+        self.chat_display.setMinimumHeight(300)
+        self.chat_display.setStyleSheet("""
+            QTextEdit {
+                font-size: 13pt;
+                padding: 20px;
+                background-color: #f5f5f5;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+            }
+        """)
+        self.content_layout.addWidget(self.chat_display, stretch=2)
+        
+        # Input area label
+        input_label = QLabel("Your message:")
+        input_label.setStyleSheet("font-size: 12pt; font-weight: bold; color: #555; margin-top: 15px; margin-bottom: 5px;")
+        self.content_layout.addWidget(input_label)
+        
+        # Text input for user message
+        self.text_input = QTextEdit()
+        self.text_input.setPlaceholderText("Type your question here...")
+        self.text_input.setMinimumHeight(80)
+        self.text_input.setMaximumHeight(100)
+        self.text_input.setStyleSheet("""
+            QTextEdit {
+                font-size: 13pt;
+                padding: 15px;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                background-color: white;
+            }
+            QTextEdit:focus {
+                border: 2px solid #2196F3;
+            }
+        """)
+        self.content_layout.addWidget(self.text_input)
+        
+        # Buttons row
+        button_layout = QHBoxLayout()
+        
+        # Send button
+        send_btn = QPushButton("💬 Send Message")
+        send_btn.setMinimumHeight(50)
+        send_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2196F3;
+                color: white;
+                font-size: 14pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 8px;
+                padding: 15px;
+            }
+            QPushButton:hover {
+                background-color: #1976D2;
+            }
+            QPushButton:pressed {
+                background-color: #0D47A1;
+            }
+        """)
+        send_btn.setCursor(Qt.PointingHandCursor)
+        send_btn.clicked.connect(self.send_message)
+        button_layout.addWidget(send_btn, stretch=3)
+        
+        # Clear button
+        clear_btn = QPushButton("🗑️ Clear Chat")
+        clear_btn.setMinimumHeight(50)
+        clear_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #757575;
+                color: white;
+                font-size: 12pt;
+                font-weight: bold;
+                border: none;
+                border-radius: 8px;
+                padding: 15px;
+            }
+            QPushButton:hover {
+                background-color: #616161;
+            }
+            QPushButton:pressed {
+                background-color: #424242;
+            }
+        """)
+        clear_btn.setCursor(Qt.PointingHandCursor)
+        clear_btn.clicked.connect(self.clear_chat)
+        button_layout.addWidget(clear_btn, stretch=1)
+        
+        self.content_layout.addLayout(button_layout)
+    
+    def send_message(self):
+        """Send user message and get AI response"""
+        user_message = self.text_input.toPlainText().strip()
+        if not user_message:
+            return
+        
+        # Add user message to chat
+        self.add_to_chat("You", user_message, "#2196F3")
+        
+        # Clear input
+        self.text_input.clear()
+        
+        # Show thinking indicator
+        self.chat_display.append("\n💭 Claude is thinking...\n")
+        QApplication.processEvents()
+        
+        try:
+            # Get AI response using MenuLLM
+            if self.menu_llm:
+                response = self.menu_llm.respond(
+                    action_type="default",
+                    user_input=user_message,
+                    metamodel_context="Free-form chat about the NFR Framework. Answer questions naturally and helpfully."
+                )
+                
+                # Remove thinking indicator and add response
+                current_text = self.chat_display.toPlainText()
+                if "💭 Claude is thinking..." in current_text:
+                    current_text = current_text.replace("\n💭 Claude is thinking...\n", "")
+                    self.chat_display.setPlainText(current_text)
+                
+                self.add_to_chat("Claude", response, "#4CAF50")
+            else:
+                self.add_to_chat("System", "❌ LLM not available. Please ensure Ollama is running.", "#f44336")
+                
+        except Exception as e:
+            self.add_to_chat("System", f"❌ Error: {str(e)}", "#f44336")
+    
+    def add_to_chat(self, sender, message, color):
+        """Add a message to the chat display"""
+        self.chat_history.append((sender, message))
+        
+        # Format message with HTML for styling
+        formatted = f'<div style="margin-bottom: 15px;">'
+        formatted += f'<b style="color: {color}; font-size: 14pt;">{sender}:</b><br>'
+        formatted += f'<span style="color: #333; font-size: 13pt;">{message.replace(chr(10), "<br>")}</span>'
+        formatted += '</div>'
+        
+        self.chat_display.append(formatted)
+        
+        # Scroll to bottom
+        scrollbar = self.chat_display.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+    
+    def clear_chat(self):
+        """Clear the chat history"""
+        self.chat_history = []
+        self.chat_display.clear()
+        self.chat_display.setPlaceholderText("Chat cleared. Ask me anything about the NFR Framework!")
