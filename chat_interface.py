@@ -103,10 +103,15 @@ class ChatMessage(QFrame):
         
         # Add buttons if any
         if self.buttons:
-            button_layout = QHBoxLayout()
+            # Use grid layout for wrapping buttons
+            button_layout = QGridLayout()
             button_layout.setSpacing(10)
+            button_layout.setColumnStretch(3, 1)  # Make last column stretch
             
-            for btn_data in self.buttons:
+            # Add buttons with wrapping (3 per row)
+            for i, btn_data in enumerate(self.buttons):
+                row = i // 3
+                col = i % 3
                 btn = QPushButton(btn_data["label"])
                 btn.setStyleSheet("""
                     QPushButton {
@@ -134,9 +139,7 @@ class ChatMessage(QFrame):
                 btn.clicked.connect(lambda checked, b=btn: self._on_button_click(b))
                 
                 self.button_widgets.append(btn)
-                button_layout.addWidget(btn)
-            
-            button_layout.addStretch()
+                button_layout.addWidget(btn, row, col)
             layout.addLayout(button_layout)
     
     def _on_button_click(self, button):
@@ -588,6 +591,10 @@ class ChatInterface(QMainWindow):
     
     def _on_pipeline_button_click(self, action: str, label: str):
         """Handle pipeline button clicks"""
+        print(f"\n🔘 BUTTON CLICKED:")
+        print(f"   Action: {action}")
+        print(f"   Label: {label}")
+        
         # Get the button that was clicked to access its data
         sender = self.sender()
         button_data = {}
@@ -631,6 +638,13 @@ class ChatInterface(QMainWindow):
             prompt = f"Show claims for {entity}"
             self._add_message("user", prompt)
             self._process_claims(entity)
+        
+        elif action == "browse_category":
+            category = button_data.get("category", "")
+            prompt = f"Browse: {category}"
+            self._add_message("user", prompt)
+            self._process_browse_category(category)
+        
         else:
             # Generic handling
             self._add_message("user", f"[{label}]")
@@ -872,16 +886,31 @@ class ChatInterface(QMainWindow):
                     pass
                 
                 # Search metamodel for contributions to any of these targets
-                contributions = []
-                found_ops = []
+                # STRATEGY: Include operationalizations with at least one positive contribution,
+                # but show ALL their contributions (positive and negative) for complete context
+                positive_types = ['MAKE', 'HELP', 'SOME+']
+                
+                # Step 1: Find operationalizations that have at least one positive contribution
+                ops_with_positive = set()
+                all_contributions = []
+                
                 for name, obj in inspect.getmembers(metamodel):
                     if isinstance(obj, metamodel.Contribution):
-                        # Check if this contribution targets any of our search targets
                         target_match = any(obj.target.lower() == t.lower() for t in search_targets)
                         if target_match:
-                            contributions.append((obj.source, obj.target, obj.type.value))
-                            if obj.source not in found_ops:
-                                found_ops.append(obj.source)
+                            all_contributions.append((obj.source, obj.target, obj.type.value))
+                            # Track if this operationalization has at least one positive
+                            if obj.type.value in positive_types:
+                                ops_with_positive.add(obj.source)
+                
+                # Step 2: Include ALL contributions from operationalizations that have at least one positive
+                contributions = []
+                found_ops = []
+                for source, target, effect in all_contributions:
+                    if source in ops_with_positive:
+                        contributions.append((source, target, effect))
+                        if source not in found_ops:
+                            found_ops.append(source)
                 
                 if not contributions:
                     response = f"ℹ️ No operationalizations found for '{formatted_name}'.\n\n"
@@ -912,9 +941,9 @@ class ChatInterface(QMainWindow):
                 )
                 full_response = suggestion + llm_response
                 
-                # Add buttons for side effects (top 3 operationalizations)
+                # Add buttons for side effects for ALL operationalizations
                 buttons = []
-                for op in found_ops[:3]:
+                for op in found_ops:  # All operationalizations, not just top 3
                     buttons.append({
                         "label": f"⚡ Side effects of {op}",
                         "action": "side_effects",
@@ -1087,7 +1116,10 @@ class ChatInterface(QMainWindow):
                 for i, claim_data in enumerate(all_claims, 1):
                     response += f"{i}. Decomposition: {claim_data['decomposition']}\n"
                     response += f"   Argument: {claim_data['argument']}\n"
-                    response += f"   Topic: {claim_data['topic']}\n\n"
+                    # Only show topic if it exists and isn't N/A
+                    if claim_data['topic'] and claim_data['topic'] != 'N/A':
+                        response += f"   Topic: {claim_data['topic']}\n"
+                    response += "\n"
                 
                 response += "💡 These are scholarly sources supporting the decomposition methods."
                 
@@ -1389,207 +1421,249 @@ class ChatInterface(QMainWindow):
         thread = threading.Thread(target=process, daemon=True)
         thread.start()
     def _menu_browse(self):
-        """Handle 'Browse' menu button - Full interactive browse like menu_windows"""
-        from PySide6.QtWidgets import QComboBox
+        """Handle Browse menu button - Chatbot style with category buttons"""
+        message = "📚 Browse NFR Framework\n\n"
+        message += "Choose a category to explore:"
         
-        # Create dialog
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Browse Metamodel Examples")
-        dialog.setModal(True)
-        dialog.setMinimumWidth(700)
-        dialog.setMinimumHeight(600)
+        buttons = [
+            {"label": "📋 NFR Types", "action": "browse_category", "data": {"category": "NFR Types"}},
+            {"label": "🔧 Operationalizing Softgoals", "action": "browse_category", "data": {"category": "Operationalizing Softgoals"}},
+            {"label": "⚙️ Functional Requirement Types", "action": "browse_category", "data": {"category": "Functional Requirement Types"}},
+            {"label": "📜 Claim Softgoals", "action": "browse_category", "data": {"category": "Claim Softgoals"}},
+            {"label": "🌳 Decomposition Methods", "action": "browse_category", "data": {"category": "Decomposition Methods"}},
+            {"label": "🔗 Contribution Links", "action": "browse_category", "data": {"category": "Contribution Links"}},
+            {"label": "💭 Correlation Links", "action": "browse_category", "data": {"category": "Correlation Links"}},
+        ]
         
-        layout = QVBoxLayout(dialog)
+        self._add_message("assistant", message, buttons)
+    
+    def _process_browse_category(self, category: str):
+        """Process browse category - show both type hierarchy AND ground instances"""
+        print(f"\n{'='*60}")
+        print(f"BROWSE CATEGORY: {category}")
+        print(f"{'='*60}\n")
         
-        # Title
-        title = QLabel("Browse Metamodel Examples")
-        title.setStyleSheet("font-size: 16pt; font-weight: bold; color: #1565C0; margin-bottom: 10px;")
-        layout.addWidget(title)
+        thinking_msg = self._add_message("assistant", f"📚 Loading {category}...")
         
-        # Description
-        desc = QLabel("Explore entities, relationships, and constraints in the NFR Framework metamodel")
-        desc.setStyleSheet("font-size: 11pt; color: #666; margin-bottom: 20px;")
-        layout.addWidget(desc)
-        
-        # Category selection
-        cat_label = QLabel("Select category:")
-        cat_label.setStyleSheet("font-size: 12pt; font-weight: bold; color: #333;")
-        layout.addWidget(cat_label)
-        
-        category_combo = QComboBox()
-        category_combo.addItems([
-            "NFR Types",
-            "Operationalizing Softgoals",
-            "Functional Requirement Types",
-            "Claim Softgoals",
-            "Decomposition Methods",
-            "Contribution Links (Relationships)",
-            "Correlation Links (Argumentation)"
-        ])
-        category_combo.setMinimumHeight(40)
-        category_combo.setStyleSheet("""
-            QComboBox {
-                font-size: 12pt;
-                padding: 8px;
-                border: 2px solid #ddd;
-                border-radius: 8px;
-                background-color: white;
-            }
-        """)
-        layout.addWidget(category_combo)
-        
-        # Show Examples button
-        show_btn = QPushButton("📋 Show Examples")
-        show_btn.setMinimumHeight(50)
-        show_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-size: 13pt;
-                font-weight: bold;
-                border: none;
-                border-radius: 8px;
-                margin-top: 10px;
-            }
-            QPushButton:hover { background-color: #45a049; }
-        """)
-        layout.addWidget(show_btn)
-        
-        # Results area
-        results_area = QTextEdit()
-        results_area.setReadOnly(True)
-        results_area.setPlaceholderText("Click 'Show Examples' to load...")
-        results_area.setMinimumHeight(300)
-        results_area.setStyleSheet("""
-            QTextEdit {
-                font-size: 11pt;
-                padding: 15px;
-                background-color: white;
-                border: 2px solid #ddd;
-                border-radius: 8px;
-                margin-top: 10px;
-            }
-        """)
-        layout.addWidget(results_area)
-        
-        # Close button
-        close_btn = QPushButton("Close")
-        close_btn.setMinimumHeight(40)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #757575;
-                color: white;
-                font-size: 11pt;
-                padding: 10px;
-                border: none;
-                border-radius: 5px;
-                margin-top: 10px;
-            }
-            QPushButton:hover { background-color: #616161; }
-        """)
-        close_btn.clicked.connect(dialog.accept)
-        layout.addWidget(close_btn)
-        
-        # Connect show button with FULL menu_windows logic
-        def show_examples():
-            category = category_combo.currentText()
-            results_area.setText(f"⏳ Loading {category}...")
-            QApplication.processEvents()
-            
-            def do_query():
-                try:
-                    examples = []
+        def process():
+            try:
+                print(f"Processing category: {category}")
+                examples = []
+                
+                if category == "NFR Types":
+                    # Get all NFR types
+                    for name, obj in inspect.getmembers(metamodel):
+                        if inspect.isclass(obj) and hasattr(metamodel, 'NFRSoftgoalType'):
+                            try:
+                                if issubclass(obj, metamodel.NFRSoftgoalType) and obj != metamodel.NFRSoftgoalType:
+                                    if not name.endswith('MetaClass') and 'Type' in name:
+                                        # Get type hierarchy (children classes)
+                                        type_children = []
+                                        try:
+                                            child_objs = getChildren(obj)
+                                            for child in child_objs:
+                                                child_name = getEntityName(child)
+                                                type_children.append(("type", child_name))
+                                        except:
+                                            pass
+                                        
+                                        # Get ground instances (actual objects)
+                                        # Ground instances are instances of Softgoal classes, not Type classes
+                                        # e.g., performanceNFR1 is instance of TimePerformanceSoftgoal
+                                        instance_children = []
+                                        
+                                        # Find corresponding Softgoal class for this Type
+                                        softgoal_name = name.replace('Type', 'Softgoal')
+                                        softgoal_class = None
+                                        if hasattr(metamodel, softgoal_name):
+                                            softgoal_class = getattr(metamodel, softgoal_name)
+                                        
+                                        if softgoal_class:
+                                            for inst_name, inst_obj in inspect.getmembers(metamodel):
+                                                if not inspect.isclass(inst_obj) and not inspect.isfunction(inst_obj):
+                                                    try:
+                                                        # Check if instance of this softgoal or its children
+                                                        if isinstance(inst_obj, softgoal_class):
+                                                            instance_children.append(("instance", inst_name))
+                                                        # Also check children softgoals
+                                                        try:
+                                                            for child_class in getChildren(softgoal_class):
+                                                                if isinstance(inst_obj, child_class):
+                                                                    instance_children.append(("instance", inst_name))
+                                                                    break
+                                                        except:
+                                                            pass
+                                                    except:
+                                                        pass
+                                        
+                                        examples.append((name, obj, type_children, instance_children))
+                            except TypeError:
+                                pass
+                
+                elif category == "Operationalizing Softgoals":
+                    for name, obj in inspect.getmembers(metamodel):
+                        if inspect.isclass(obj) and hasattr(metamodel, 'OperationalizingSoftgoalType'):
+                            try:
+                                if issubclass(obj, metamodel.OperationalizingSoftgoalType) and obj != metamodel.OperationalizingSoftgoalType:
+                                    if not name.endswith('MetaClass') and 'Type' in name:
+                                        # Type hierarchy
+                                        type_children = []
+                                        try:
+                                            child_objs = getChildren(obj)
+                                            for child in child_objs:
+                                                child_name = getEntityName(child)
+                                                type_children.append(("type", child_name))
+                                        except:
+                                            pass
+                                        
+                                        # Ground instances
+                                        instance_children = []
+                                        softgoal_name = name.replace('Type', 'Softgoal')
+                                        softgoal_class = None
+                                        if hasattr(metamodel, softgoal_name):
+                                            softgoal_class = getattr(metamodel, softgoal_name)
+                                        
+                                        if softgoal_class:
+                                            for inst_name, inst_obj in inspect.getmembers(metamodel):
+                                                if not inspect.isclass(inst_obj) and not inspect.isfunction(inst_obj):
+                                                    try:
+                                                        if isinstance(inst_obj, softgoal_class):
+                                                            instance_children.append(("instance", inst_name))
+                                                        try:
+                                                            for child_class in getChildren(softgoal_class):
+                                                                if isinstance(inst_obj, child_class):
+                                                                    instance_children.append(("instance", inst_name))
+                                                                    break
+                                                        except:
+                                                            pass
+                                                    except:
+                                                        pass
+                                        
+                                        examples.append((name, obj, type_children, instance_children))
+                            except TypeError:
+                                pass
+                
+                elif category == "Functional Requirement Types":
+                    for name, obj in inspect.getmembers(metamodel):
+                        if inspect.isclass(obj) and hasattr(metamodel, 'FunctionalRequirementType'):
+                            try:
+                                if issubclass(obj, metamodel.FunctionalRequirementType) and obj != metamodel.FunctionalRequirementType:
+                                    if not name.endswith('MetaClass'):
+                                        type_children = []
+                                        try:
+                                            child_objs = getChildren(obj)
+                                            for child in child_objs:
+                                                child_name = getEntityName(child)
+                                                type_children.append(("type", child_name))
+                                        except:
+                                            pass
+                                        
+                                        instance_children = []
+                                        # FR instances would be instances of FRSoftgoal, not FRType
+                                        softgoal_name = name.replace('Type', 'Softgoal')
+                                        softgoal_class = None
+                                        if hasattr(metamodel, softgoal_name):
+                                            softgoal_class = getattr(metamodel, softgoal_name)
+                                        
+                                        if softgoal_class:
+                                            for inst_name, inst_obj in inspect.getmembers(metamodel):
+                                                if not inspect.isclass(inst_obj) and not inspect.isfunction(inst_obj):
+                                                    try:
+                                                        if isinstance(inst_obj, softgoal_class):
+                                                            instance_children.append(("instance", inst_name))
+                                                    except:
+                                                        pass
+                                        
+                                        examples.append((name, obj, type_children, instance_children))
+                            except TypeError:
+                                pass
+                
+                elif category == "Claim Softgoals":
+                    for name, obj in inspect.getmembers(metamodel):
+                        if hasattr(metamodel, 'ClaimSoftgoal'):
+                            if isinstance(obj, metamodel.ClaimSoftgoal):
+                                examples.append((name, obj, [], []))
+                
+                elif category == "Decomposition Methods":
+                    for name, obj in inspect.getmembers(metamodel):
+                        if hasattr(metamodel, 'NFRDecompositionMethod'):
+                            if isinstance(obj, metamodel.NFRDecompositionMethod):
+                                examples.append((name, obj, [], []))
+                        elif hasattr(metamodel, 'OperationalizationDecompositionMethod'):
+                            if isinstance(obj, metamodel.OperationalizationDecompositionMethod):
+                                examples.append((name, obj, [], []))
+                
+                elif category == "Contribution Links":
+                    for name, obj in inspect.getmembers(metamodel):
+                        if hasattr(metamodel, 'Contribution'):
+                            if isinstance(obj, metamodel.Contribution):
+                                info = f"{obj.source} → {obj.target} ({obj.type.value})"
+                                examples.append((name, obj, [(info, "")], []))
+                
+                elif category == "Correlation Links":
+                    for name, obj in inspect.getmembers(metamodel):
+                        if hasattr(metamodel, 'Correlation'):
+                            if isinstance(obj, metamodel.Correlation):
+                                examples.append((name, obj, [], []))
+                
+                # Format output with BOTH type hierarchy and ground instances
+                if examples:
+                    response = f"📚 {category.upper()}\n\n"
+
+                    response += f"Found {len(examples)} item(s):\n\n"
+
                     
-                    # EXACT same logic as menu_windows.py ExamplesWindow
-                    if category == "NFR Types":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if inspect.isclass(obj) and hasattr(metamodel, 'NFRSoftgoalType'):
-                                try:
-                                    if issubclass(obj, metamodel.NFRSoftgoalType) and obj != metamodel.NFRSoftgoalType:
-                                        if not name.endswith('MetaClass') and 'Type' in name:
-                                            examples.append((name, obj))
-                                except TypeError:
-                                    pass
-                    
-                    elif category == "Operationalizing Softgoals":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if inspect.isclass(obj) and hasattr(metamodel, 'OperationalizingSoftgoalType'):
-                                try:
-                                    if issubclass(obj, metamodel.OperationalizingSoftgoalType) and obj != metamodel.OperationalizingSoftgoalType:
-                                        if not name.endswith('MetaClass') and 'Type' in name:
-                                            examples.append((name, obj))
-                                except TypeError:
-                                    pass
-                    
-                    elif category == "Functional Requirement Types":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if inspect.isclass(obj) and hasattr(metamodel, 'FunctionalRequirementType'):
-                                try:
-                                    if issubclass(obj, metamodel.FunctionalRequirementType) and obj != metamodel.FunctionalRequirementType:
-                                        if not name.endswith('MetaClass'):
-                                            examples.append((name, obj))
-                                except TypeError:
-                                    pass
-                    
-                    elif category == "Claim Softgoals":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if hasattr(metamodel, 'ClaimSoftgoal'):
-                                if isinstance(obj, metamodel.ClaimSoftgoal):
-                                    examples.append((name, obj))
-                    
-                    elif category == "Decomposition Methods":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if hasattr(metamodel, 'NFRDecompositionMethod'):
-                                if isinstance(obj, metamodel.NFRDecompositionMethod):
-                                    examples.append((name, obj))
-                            elif hasattr(metamodel, 'OperationalizationDecompositionMethod'):
-                                if isinstance(obj, metamodel.OperationalizationDecompositionMethod):
-                                    examples.append((name, obj))
-                    
-                    elif category == "Contribution Links (Relationships)":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if hasattr(metamodel, 'Contribution'):
-                                if isinstance(obj, metamodel.Contribution):
-                                    examples.append((name, obj))
-                    
-                    elif category == "Correlation Links (Argumentation)":
-                        for name, obj in inspect.getmembers(metamodel):
-                            if hasattr(metamodel, 'Correlation'):
-                                if isinstance(obj, metamodel.Correlation):
-                                    examples.append((name, obj))
-                    
-                    # Format output
-                    if examples:
-                        response = f"📚 {category.upper()}\n\n"
-                        response += f"Found {len(examples)} example(s):\n\n"
+                    for i, item in enumerate(examples, 1):
+                        if len(item) == 4:  # Has type_children and instance_children
+                            name, obj, type_children, instance_children = item
+                        else:  # Old format
+                            name, obj = item[0], item[1]
+                            type_children = []
+                            instance_children = []
                         
-                        for i, (name, obj) in enumerate(examples, 1):
-                            display_name = format_entity_name(name) if 'Type' in name else name
-                            response += f"{i}. {display_name}\n"
+                        display_name = format_entity_name(name) if 'Type' in name else name
+                        response += f"{i}. **{display_name}**\n"
                         
-                        response += f"\n💡 Total: {len(examples)} items"
-                    else:
-                        response = f"ℹ️ No examples found for {category}"
+                        # Show type hierarchy
+                        if type_children:
+                            response += "   Types:\n"
+                            for kind, child_name in type_children[:5]:
+                                child_display = format_entity_name(child_name)
+                                response += f"     ↳ {child_display}\n"
+                            if len(type_children) > 5:
+                                response += f"     ↳ ... and {len(type_children) - 5} more\n"
+                        
+                        # Show ground instances
+                        if instance_children:
+                            response += "   Instances:\n"
+                            for kind, inst_name in instance_children:
+                                response += f"     ⚡ {inst_name}\n"
+                        
+                        response += "\n"
                     
-                    return response
+                    response += f"💡 Total: {len(examples)} items"
                     
-                except Exception as e:
-                    import traceback
-                    return f"❌ Error: {str(e)}\n\n{traceback.format_exc()}"
-            
-            # Run in thread
-            def run_and_update():
-                result = do_query()
-                QMetaObject.invokeMethod(results_area, "setText", 
-                                        Qt.QueuedConnection, Q_ARG(str, result))
-            
-            thread = threading.Thread(target=run_and_update, daemon=True)
-            thread.start()
+                    # Add helpful hint instead of limited buttons
+                    response += "\n💬 **Tip:** Type any item name above to explore it in detail!"
+                    buttons = []
+                else:
+                    response = f"ℹ️ No items found for {category}"
+                    buttons = []
+                
+                # Update UI
+                if buttons:
+                    self.update_ui_signal.emit(thinking_msg, response, buttons)
+                else:
+                    self.update_thinking_signal.emit(thinking_msg, response)
+                
+            except Exception as e:
+                error_msg = f"❌ Error: {str(e)}"
+                import traceback
+                traceback.print_exc()
+                self.update_thinking_signal.emit(thinking_msg, error_msg)
         
-        show_btn.clicked.connect(show_examples)
-        
-        # Show dialog
-        dialog.exec()
+        thread = threading.Thread(target=process, daemon=True)
+        thread.start()
     def _show_info(self):
         """Show information about the tool"""
         info_text = """ℹ️ **NFR Framework Assistant**

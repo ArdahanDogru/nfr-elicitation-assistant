@@ -1371,7 +1371,7 @@ NetworkMonitoringToTimePerformance = Contribution("NetworkMonitoring", "TimePerf
 AuthenticationToTimePerformance = Contribution("Authentication", "TimePerformance", ContributionType.HURT) 
 
 #ops for spacePerf
-IndexingToSpacePerformance = Contribution("Indexing", "SpacePerformance", ContributionType.HELP)
+IndexingToSpacePerformance = Contribution("Indexing", "SpacePerformance", ContributionType.HURT)
 CachingToSpacePerformance = Contribution("Caching", "SpacePerformance", ContributionType.HELP)
 CompressionToSpacePerformance = Contribution("Compression", "SpacePerformance", ContributionType.HELP)
 

@@ -3604,14 +3604,30 @@ class OperationalizationDecompositionWindow(ModuleWindow):
                 except:
                     pass
                 
-                contributions = []
+                # STRATEGY: Include operationalizations with at least one positive contribution,
+                # but show ALL their contributions (positive and negative) for complete context
+                positive_types = ['MAKE', 'HELP', 'SOME+']
+                
+                # Step 1: Find operationalizations that have at least one positive contribution
+                ops_with_positive = set()
+                all_contributions = []
+                
                 for name, obj in inspect.getmembers(metamodel):
                     if isinstance(obj, metamodel.Contribution):
                         target_match = any(obj.target.lower() == t.lower() for t in search_targets)
                         if target_match:
-                            contributions.append((obj.source, obj.target, obj.type.value))
-                            if obj.source not in found_ops:
-                                found_ops.append(obj.source)
+                            all_contributions.append((obj.source, obj.target, obj.type.value))
+                            # Track if this operationalization has at least one positive
+                            if obj.type.value in positive_types:
+                                ops_with_positive.add(obj.source)
+                
+                # Step 2: Include ALL contributions from operationalizations that have at least one positive
+                contributions = []
+                for source, target, effect in all_contributions:
+                    if source in ops_with_positive:
+                        contributions.append((source, target, effect))
+                        if source not in found_ops:
+                            found_ops.append(source)
                 
                 if contributions:
                     response += f"Found {len(contributions)} operationalization(s):\n\n"
