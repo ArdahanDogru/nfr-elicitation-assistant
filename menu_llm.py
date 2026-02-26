@@ -24,29 +24,29 @@ class MenuLLM:
     """
     
     # Token limits per action type (optimized for each use case)
-    TOKEN_LIMITS = {
+    TOKEN_LIMITS = { 
         # SHORT responses (150-200 tokens)
-        "show_examples": 200,              # Browse Examples details - brief
-        "browse_entity": 350,              # Browse Examples with multiple decompositions
+        "show_examples": 1000,              # Browse Examples details - brief
+        "browse_entity": 1000,              # Browse Examples with multiple decompositions
         
         # MEDIUM responses (250-300 tokens)  
-        "define_entity": 280,              # What is this? - moderate detail
-        "define_nfr": 280,                 # What is NFR/FR? - moderate detail
-        "explain_classification": 280,     # Classification explanation
-        "explain_specific_classification": 280,  # Specific type classification
-        "analyze_contributions": 700,      # Side effects analysis (increased)
+        "define_entity": 1000,              # What is this? - moderate detail
+        "define_nfr": 1000,                 # What is NFR/FR? - moderate detail
+        "explain_classification": 1000,     # Classification explanation
+        "explain_specific_classification": 1000,  # Specific type classification
+        "analyze_contributions": 1000,      # Side effects analysis (increased)
         
         # LONG responses (350-400 tokens)
-        "verify": 500,                     # Statement verification - detailed analysis
-        "decompose": 600,                  # Decomposition - multiple children
-        "show_sources": 400,               # Justifications - academic detail
-        "show_operationalizations": 400,   # Operationalizations - multiple techniques
-        "show_claims": 400,                # Argumentation - detailed claims
-        "list_all_types": 350,             # List all types - comprehensive
-        "list_claims": 350,                # List claims - detailed
+        "verify": 1000,                     # Statement verification - detailed analysis
+        "decompose": 1000,                  # Decomposition - multiple children
+        "show_sources": 1000,               # Justifications - academic detail
+        "show_operationalizations": 1000,   # Operationalizations - multiple techniques
+        "show_claims": 1000,                # Argumentation - detailed claims
+        "list_all_types": 1000,             # List all types - comprehensive
+        "list_claims": 1000,                # List claims - detailed
         
         # Default fallback
-        "default": 250,
+        "default": 1000,
     }
     
     def __init__(self, model_name="llama3.1:8b"):

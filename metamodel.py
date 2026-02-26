@@ -1224,6 +1224,13 @@ PerformanceDecomp2 = PerformanceDecompositionMethod(
     offspring=[TimePerformanceType, SpacePerformanceType, ResponsivenessPerformanceType]
 )
 
+# Performance decomposition - Windows Task Manager approach
+PerformanceDecomp3 = PerformanceDecompositionMethod(
+    name="Performance Type Decomposition 3",
+    parent=PerformanceType,
+    offspring=[CPUUtilizationType, MemoryUsageType, DiskTimeType, NetworkThroughputType, GPUUtilizationType]
+)
+
 # Security decomposition - CIA Triad
 SecurityDecomp1 = SecurityDecompositionMethod(
     name="Security Type Decomposition 1",
@@ -1231,12 +1238,7 @@ SecurityDecomp1 = SecurityDecompositionMethod(
     offspring=[ConfidentialityType, IntegrityType, AvailabilityType]
 )
 
-# Performance decomposition - Windows Task Manager approach
-PerformanceDecomp3 = PerformanceDecompositionMethod(
-    name="Performance Type Decomposition 3",
-    parent=PerformanceType,
-    offspring=[CPUUtilizationType, MemoryUsageType, DiskTimeType, NetworkThroughputType, GPUUtilizationType]
-)
+
 
 AuthorizationDecomp1 = AuthorizationDecompositionMethod(
     name="Authorization Type Decomposition 1",

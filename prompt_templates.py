@@ -7,12 +7,9 @@ Structured prompts for different menu actions
 MENU_PROMPTS = {
     "define_entity": """
 What is {user_input}?
-
 Given this NFR type information:
 {context}
-
-Provide a brief, clear, and concise explanation of what {user_input} is. Try to make it so that even people who have no expert knowledge in the requirements engineering
-field can understand what's going on. Keep it simple and direct, and about the entity itself. Provide easy to understand examples if it fits.
+State what type of entity it is in requirements engineering. Provide a clear and concise explanation of what {user_input} is and why it matters. Make it so that even people who have no expert knowledge in the requirements engineering field can understand. Provide easy to understand examples.
 """,
 
 

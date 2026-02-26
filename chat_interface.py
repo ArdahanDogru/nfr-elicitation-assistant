@@ -600,11 +600,16 @@ class ChatInterface(QMainWindow):
         button_data = {}
         
         # Find the ChatMessage that contains this button
+        # Must match BOTH action AND label (since multiple buttons can have same action)
         for msg in self.chat_history:
             if msg.sender == "assistant":
                 for btn_widget in msg.button_widgets:
-                    if btn_widget.property("action") == action:
+                    # Match both action AND label to get the correct button
+                    if (btn_widget.property("action") == action and 
+                        btn_widget.text() == label):
                         button_data = btn_widget.property("button_data")
+                        print(f"   ✓ Found matching button: action={action}, label={label}")
+                        print(f"   ✓ Button data: {button_data}")
                         break
         
         # Add user message with appropriate prompt text
@@ -904,13 +909,24 @@ class ChatInterface(QMainWindow):
                                 ops_with_positive.add(obj.source)
                 
                 # Step 2: Include ALL contributions from operationalizations that have at least one positive
+                # Also verify entity names through fuzzy matching to avoid button mismatch issues
                 contributions = []
                 found_ops = []
+                processed_sources = set()  # Track which raw sources we've already verified
+                
                 for source, target, effect in all_contributions:
                     if source in ops_with_positive:
                         contributions.append((source, target, effect))
-                        if source not in found_ops:
-                            found_ops.append(source)
+                        # Only verify and add to found_ops once per unique source
+                        if source not in processed_sources:
+                            processed_sources.add(source)
+                            # Verify this entity name exists through fuzzy matching
+                            matched_name, _ = fuzzy_match_entity(source)
+                            print(f"   Verified: '{source}' → '{matched_name}'")
+                            if matched_name:
+                                found_ops.append(matched_name)  # Use verified name
+                            else:
+                                found_ops.append(source)  # Fallback to raw name
                 
                 if not contributions:
                     response = f"ℹ️ No operationalizations found for '{formatted_name}'.\n\n"
@@ -942,13 +958,31 @@ class ChatInterface(QMainWindow):
                 full_response = suggestion + llm_response
                 
                 # Add buttons for side effects for ALL operationalizations
+                # Remove duplicates from found_ops first
+                unique_ops = []
+                seen = set()
+                for op in found_ops:
+                    if op not in seen:
+                        seen.add(op)
+                        unique_ops.append(op)
+                
+                print(f"\n🔘 DEBUG: found_ops = {found_ops}")
+                print(f"🔘 DEBUG: found_ops length = {len(found_ops)}")
+                print(f"🔘 DEBUG: unique_ops = {unique_ops}")
+                print(f"🔘 DEBUG: unique count = {len(unique_ops)}")
+                
                 buttons = []
-                for op in found_ops:  # All operationalizations, not just top 3
+                for i, op in enumerate(unique_ops):  # Use deduplicated list
+                    print(f"   Button {i}: op='{op}', type={type(op)}")
+                    btn_label = f"⚡ Side effects of {op}"
+                    btn_data = {"entity": op}
+                    print(f"   Button {i}: label='{btn_label}', data={btn_data}")
                     buttons.append({
-                        "label": f"⚡ Side effects of {op}",
+                        "label": btn_label,
                         "action": "side_effects",
-                        "data": {"entity": op}
+                        "data": btn_data
                     })
+                    print(f"   Button {i} added: {buttons[-1]}")
                 
                 
                 # Add claims/justifications button
@@ -987,6 +1021,11 @@ class ChatInterface(QMainWindow):
     
     def _process_side_effects(self, user_input: str):
         """Process side effects query - EXACT same logic as menu_windows.py SideEffectsWindow"""
+        print(f"\n{'='*60}")
+        print(f"SIDE EFFECTS DEBUG:")
+        print(f"Input from button: '{user_input}'")
+        print(f"{'='*60}")
+        
         thinking_msg = self._add_message("assistant", "⚡ Analyzing contributions...")
         
         def process():
@@ -996,6 +1035,7 @@ class ChatInterface(QMainWindow):
                 
                 # EXACT same logic as menu_windows.py SideEffectsWindow
                 matched_name, suggestion = fuzzy_match_entity(user_input)
+                print(f"Fuzzy matched to: '{matched_name}'")
                 if not matched_name:
                     self.update_thinking_signal.emit(thinking_msg, suggestion)
                     return
@@ -1092,15 +1132,30 @@ class ChatInterface(QMainWindow):
                     self.update_thinking_signal.emit(thinking_msg, response)
                     return
                 
-                # Get claims for each decomposition
+                # Get claims for each decomposition with complete info
                 all_claims = []
+                claim_names = {}  # Map claim object to name
+                
+                # First, get all claim names from metamodel
+                import inspect
+                for name, obj in inspect.getmembers(metamodel):
+                    if isinstance(obj, metamodel.ClaimSoftgoal):
+                        claim_names[id(obj)] = name
+                
+                # Get claims for each decomposition
                 for decomp in decomps:
                     claims = getClaimsFor(decomp)
                     for claim in claims:
+                        claim_name = claim_names.get(id(claim), "Unknown Claim")
+                        
+                        # Get what this claim supports
+                        supports_text = decomp.name if hasattr(decomp, 'name') else str(decomp)
+                        
                         all_claims.append({
+                            'claim_name': claim_name,
                             'decomposition': decomp.name,
                             'argument': claim.argument,
-                            'topic': str(getattr(claim, 'topic', 'N/A'))
+                            'supports': supports_text
                         })
                 
                 if not all_claims:
@@ -1108,17 +1163,15 @@ class ChatInterface(QMainWindow):
                     self.update_thinking_signal.emit(thinking_msg, response)
                     return
                 
-                # Build response - just show the data directly, no LLM
+                # Build response - show complete claim information
                 response = suggestion
                 response += f"📜 Claims/Justifications for {formatted_name}\n\n"
                 response += f"Found {len(all_claims)} claim(s) supporting its decompositions:\n\n"
                 
                 for i, claim_data in enumerate(all_claims, 1):
-                    response += f"{i}. Decomposition: {claim_data['decomposition']}\n"
-                    response += f"   Argument: {claim_data['argument']}\n"
-                    # Only show topic if it exists and isn't N/A
-                    if claim_data['topic'] and claim_data['topic'] != 'N/A':
-                        response += f"   Topic: {claim_data['topic']}\n"
+                    response += f"{i}. {claim_data['claim_name']}\n"
+                    response += f"   Supports: {claim_data['decomposition']}\n"
+                    response += f"   Citation: {claim_data['argument']}\n"
                     response += "\n"
                 
                 response += "💡 These are scholarly sources supporting the decomposition methods."
