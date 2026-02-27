@@ -9,19 +9,6 @@ A prototype tool application that combines the **NFR (Non-Functional Requirement
 
 This prototype tool was developed for the paper: Eliciting Nonfunctional Requirements: an Ontology-driven Generative AI Approach.
 
-- **Query Formulation Gap** — Practitioners often don't know what questions to ask AI tools about NFRs.
-- **Response Evaluation Gap** — There is no easy way to validate AI outputs against established RE frameworks.
-
-The assistant provides a **metamodel-grounded** approach: a 3-level ontology with 47+ NFR types serves as the knowledge foundation, and an LLM (via Ollama) generates natural-language explanations anchored to that ontology.
-
-### Key Features
-
-- **Guided Exploration Pipeline** — Walk through five essential RE questions (What is it? How to decompose? What techniques exist? What are the trade-offs? What evidence supports this?)
-- **Automated Requirement Classifier** — Classifies requirements as FR/NFR and into specific subtypes (F1 ≈ 0.74 on the PROMISE dataset)
-- **Metamodel-Grounded Chatbot** — Every LLM response is constrained by the NFR Framework metamodel, reducing hallucination
-- **Interactive GUI** — PySide6-based desktop interface with menu-driven workflows
-
----
 
 ## Prerequisites
 
