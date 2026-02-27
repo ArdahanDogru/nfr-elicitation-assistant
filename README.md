@@ -1,4 +1,4 @@
-# NFR Elicitation AI Assistant
+# Eliciting Nonfunctional Requirements: an Ontology-driven Generative AI Approach
 
 A desktop application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
 
@@ -8,7 +8,7 @@ Developed as a Master's thesis project at **The University of Texas at Dallas** 
 
 ## Overview
 
-This tool addresses two fundamental gaps in AI-assisted requirements engineering:
+This prototype tool developed for  two fundamental gaps in AI-assisted requirements engineering:
 
 - **Query Formulation Gap** — Practitioners often don't know what questions to ask AI tools about NFRs.
 - **Response Evaluation Gap** — There is no easy way to validate AI outputs against established RE frameworks.
@@ -123,21 +123,9 @@ The application will:
 ├── workflow.py              # Intent classification and query routing
 ├── prompt_templates.py      # Structured prompts for LLM actions
 ├── system_prompt.py         # System instructions for the MenuLLM
+├── chat_interface.py        # chatbot-focused version
 └── utils.py                 # Shared utilities (fuzzy matching, formatting)
 ```
 
 ---
 
-
-## Acknowledgments
-
-- **NFR Framework** — L. Chung, B.A. Nixon, E. Yu, J. Mylopoulos
-- **PROMISE Dataset** — J. Cleland-Huang, R. Settimi, X. Zou, P. Solc
-- **Ollama** — Local LLM inference engine
-- **Thesis Advisor** — Dr. Lawrence Chung, UT Dallas
-
----
-
-## License
-
-This project was developed as part of a Master's thesis at The University of Texas at Dallas. Please contact the author for licensing and usage inquiries.
