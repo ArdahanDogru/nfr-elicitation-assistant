@@ -8,7 +8,7 @@ A prototype tool application that combines the **NFR (Non-Functional Requirement
 ## Overview
 
 This prototype tool was developed for the paper: Eliciting Nonfunctional Requirements: an Ontology-driven Generative AI Approach.
-
+Below is the tutorial on how to run the tool. 
 
 ## Prerequisites
 
