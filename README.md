@@ -1,14 +1,13 @@
-# NFR Elicitation AI Assistant
+# NFR GenAI Assistant
 
-A desktop application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
+A prototype tool application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
 
-Developed as a Master's thesis project at **The University of Texas at Dallas** (CS — Data Science track).
 
 ---
 
 ## Overview
 
-This tool addresses two fundamental gaps in AI-assisted requirements engineering:
+This prototype tool was developed for the paper: Eliciting Nonfunctional Requirements: an Ontology-driven Generative AI Approach.
 
 - **Query Formulation Gap** — Practitioners often don't know what questions to ask AI tools about NFRs.
 - **Response Evaluation Gap** — There is no easy way to validate AI outputs against established RE frameworks.
@@ -33,15 +32,11 @@ The assistant provides a **metamodel-grounded** approach: a 3-level ontology wit
 
 ### Required Ollama Models
 
-The application uses two Ollama models. You must pull them before running the tool:
+The application uses the following Ollama model. You must pull it before running the tool:
 
 ```bash
-ollama pull llama3:8b
 ollama pull llama3.1:8b
 ```
-
-- `llama3:8b` — Used by the requirement classifier and LLM warm-up
-- `llama3.1:8b` — Used by the MenuLLM module for natural-language explanations
 
 > **Note:** Ollama must be installed and its server must be running before you launch the application.
 > Download Ollama from [https://ollama.com](https://ollama.com). After installation, the Ollama server typically starts automatically. You can verify by running `ollama list` in a terminal.
@@ -123,21 +118,9 @@ The application will:
 ├── workflow.py              # Intent classification and query routing
 ├── prompt_templates.py      # Structured prompts for LLM actions
 ├── system_prompt.py         # System instructions for the MenuLLM
+├── chat_interface.py        # chatbot-focused version
 └── utils.py                 # Shared utilities (fuzzy matching, formatting)
 ```
 
 ---
 
-
-## Acknowledgments
-
-- **NFR Framework** — L. Chung, B.A. Nixon, E. Yu, J. Mylopoulos
-- **PROMISE Dataset** — J. Cleland-Huang, R. Settimi, X. Zou, P. Solc
-- **Ollama** — Local LLM inference engine
-- **Thesis Advisor** — Dr. Lawrence Chung, UT Dallas
-
----
-
-## License
-
-This project was developed as part of a Master's thesis at The University of Texas at Dallas. Please contact the author for licensing and usage inquiries.
