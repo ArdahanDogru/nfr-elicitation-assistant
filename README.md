@@ -1,8 +1,7 @@
 # NFR GenAI Assistant
 
-A desktop application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.z
+A prototype tool application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
 
-Developed as a Master's thesis project at **The University of Texas at Dallas** (CS — Data Science track).
 
 ---
 
