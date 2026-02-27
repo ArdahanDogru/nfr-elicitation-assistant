@@ -32,15 +32,11 @@ The assistant provides a **metamodel-grounded** approach: a 3-level ontology wit
 
 ### Required Ollama Models
 
-The application uses two Ollama models. You must pull them before running the tool:
+The application uses the following Ollama model. You must pull it before running the tool:
 
 ```bash
-ollama pull llama3:8b
 ollama pull llama3.1:8b
 ```
-
-- `llama3:8b` — Used by the requirement classifier and LLM warm-up
-- `llama3.1:8b` — Used by the MenuLLM module for natural-language explanations
 
 > **Note:** Ollama must be installed and its server must be running before you launch the application.
 > Download Ollama from [https://ollama.com](https://ollama.com). After installation, the Ollama server typically starts automatically. You can verify by running `ollama list` in a terminal.
