@@ -2,7 +2,7 @@
 
 A prototype tool application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
 
-
+DOI: 10.5281/zenodo.18797266
 ---
 
 ## Overview
