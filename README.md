@@ -108,6 +108,8 @@ The application will:
 ├── chat_interface.py        # chatbot-focused version
 └── utils.py                 # Shared utilities (fuzzy matching, formatting)
 ```
-
+## Experiment Data
+Experiment 1: Prompt responses from LLM and tool in various tasks
+Experiment 2: NFR specification documents from using tool + LLM and LLM alone, as well as student teams' SIGs
 ---
 
