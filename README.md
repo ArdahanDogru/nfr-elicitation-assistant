@@ -1,6 +1,6 @@
-# Eliciting Nonfunctional Requirements: an Ontology-driven Generative AI Approach
+# NFR GenAI Assistant
 
-A desktop application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
+A desktop application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.z
 
 Developed as a Master's thesis project at **The University of Texas at Dallas** (CS — Data Science track).
 
@@ -8,7 +8,7 @@ Developed as a Master's thesis project at **The University of Texas at Dallas** 
 
 ## Overview
 
-This prototype tool developed for  two fundamental gaps in AI-assisted requirements engineering:
+This prototype tool was developed for the paper: Eliciting Nonfunctional Requirements: an Ontology-driven Generative AI Approach.
 
 - **Query Formulation Gap** — Practitioners often don't know what questions to ask AI tools about NFRs.
 - **Response Evaluation Gap** — There is no easy way to validate AI outputs against established RE frameworks.
