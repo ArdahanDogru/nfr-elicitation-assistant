@@ -1,4 +1,4 @@
-# NFR GenAI Assistant
+# NFRGENAI Assistant
 
 A prototype tool application that combines the **NFR (Non-Functional Requirements) Framework metamodel** with **Large Language Model** capabilities to help requirements engineers systematically elicit, classify, and explore non-functional requirements.
 
